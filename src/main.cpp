@@ -9,14 +9,22 @@ struct Couple
     int Y;
 };
 
+struct WinBitmap
+{
+    BITMAPINFO BitmapInfo;
+    int Width;
+    int Height;
+    void* Bits;
+};
 //Global variable modified by windows callback when closing.
 static bool running;
 
 //other globals
-static BITMAPINFO bitmap_info;
-static void* bitmap_memory;
-static int bitmap_width;
-static int bitmap_height;
+static WinBitmap ScreenBuffer;
+//static BITMAPINFO bitmap_info;
+//static void* bitmap_memory;
+//static int bitmap_width;
+//static int bitmap_height;
 static int animation_offset;
 
 /*
@@ -39,12 +47,12 @@ GetWindowDimensions(HWND window_handle)
 static void
 UpdateBitmap()
 {
-    for (int y = 0; y < bitmap_height; y++)
+    for (int y = 0; y < ScreenBuffer.Height; y++)
     {
-        for (int x = 0; x < bitmap_width; x++)
+        for (int x = 0; x < ScreenBuffer.Width; x++)
         {
-            int index = (y * bitmap_width) + x;
-            unsigned int* pixel_address = (unsigned int*) bitmap_memory + index;
+            int index = (y * ScreenBuffer.Width) + x;
+            unsigned int* pixel_address = (unsigned int*) ScreenBuffer.Bits + index;
             
             int r = 0x00;
             int g = 0x00;
@@ -81,25 +89,25 @@ static void
 ResizeDIBSection(int width, int height)
 {
     //need to allocate a new buffer every time because the size will be different.
-    if (bitmap_memory != NULL)
+    if (ScreenBuffer.Bits != NULL)
     {
-        VirtualFree(bitmap_memory, 0, MEM_RELEASE);
+        VirtualFree(ScreenBuffer.Bits, 0, MEM_RELEASE);
     }
     
-    bitmap_width = width;
-    bitmap_height = height;
+    ScreenBuffer.Width = width;
+    ScreenBuffer.Height = height;
     
     //standard values from handmade hero
-    bitmap_info.bmiHeader.biSize = sizeof(bitmap_info.bmiHeader);
-    bitmap_info.bmiHeader.biWidth = bitmap_width;
-    bitmap_info.bmiHeader.biHeight = -bitmap_height; //negative to indicate top-down coordinate system
-    bitmap_info.bmiHeader.biPlanes = 1;
-    bitmap_info.bmiHeader.biBitCount = 32;
-    bitmap_info.bmiHeader.biCompression = BI_RGB;
+    ScreenBuffer.BitmapInfo.bmiHeader.biSize = sizeof(ScreenBuffer.BitmapInfo.bmiHeader);
+    ScreenBuffer.BitmapInfo.bmiHeader.biWidth = ScreenBuffer.Width;
+    ScreenBuffer.BitmapInfo.bmiHeader.biHeight = -ScreenBuffer.Height; //negative to indicate top-down coordinate system
+    ScreenBuffer.BitmapInfo.bmiHeader.biPlanes = 1;
+    ScreenBuffer.BitmapInfo.bmiHeader.biBitCount = 32;
+    ScreenBuffer.BitmapInfo.bmiHeader.biCompression = BI_RGB;
     
     int bytes_per_pixel = 4;
-    int memory_size = bytes_per_pixel * bitmap_width * bitmap_height;
-    bitmap_memory = VirtualAlloc(0, memory_size, MEM_COMMIT, PAGE_READWRITE);
+    int memory_size = bytes_per_pixel * ScreenBuffer.Width * ScreenBuffer.Height;
+    ScreenBuffer.Bits = VirtualAlloc(0, memory_size, MEM_COMMIT, PAGE_READWRITE);
 }
 
 //Our own helper method for actually rendering
@@ -107,18 +115,14 @@ ResizeDIBSection(int width, int height)
 static void
 Win32UpdateWindow(
     HDC device_context,
-    RECT client_rect,
-    int x, int y, int width, int height)
+    Couple window_dimensions)
 {
-    int window_width = client_rect.right - client_rect.left;
-    int window_height = client_rect.bottom - client_rect.top;
-
     StretchDIBits(
         device_context,
-        0, 0, bitmap_width, bitmap_height,
-        0, 0, window_width, window_height,
-        bitmap_memory,
-        &bitmap_info,
+        0, 0, ScreenBuffer.Width, ScreenBuffer.Height,
+        0, 0, window_dimensions.X, window_dimensions.Y,
+        ScreenBuffer.Bits,
+        &ScreenBuffer.BitmapInfo,
         DIB_RGB_COLORS,
         SRCCOPY);
 }
@@ -138,10 +142,9 @@ WindowProc(
         //sent when windows is resized.
         case WM_SIZE:
         {
-            RECT client_rect;
-            GetClientRect(hwnd, &client_rect);
-            int width = client_rect.right - client_rect.left;
-            int height = client_rect.bottom - client_rect.top;
+            Couple window_dimensions = GetWindowDimensions(hwnd);
+            int width = window_dimensions.X;
+            int height = window_dimensions.Y;
             ResizeDIBSection(width, height);
         } break;
         //"destory" sent when app is being closed
@@ -159,15 +162,10 @@ WindowProc(
         //windows requests to repaint for whatever reason
         case WM_PAINT:
         {
-            RECT client_rect;
-            GetClientRect(hwnd, &client_rect);
+            Couple window_dimensions = GetWindowDimensions(hwnd);
             PAINTSTRUCT paint;
             HDC device_context = BeginPaint(hwnd, &paint);
-            int x = paint.rcPaint.left;
-            int y = paint.rcPaint.top;
-            int height = paint.rcPaint.bottom - paint.rcPaint.top;
-            int width = paint.rcPaint.right - paint.rcPaint.left;
-            Win32UpdateWindow(device_context, client_rect, x, y, width, height);
+            Win32UpdateWindow(device_context, window_dimensions);
             EndPaint(hwnd, &paint);
         } break;
         default:
@@ -236,18 +234,15 @@ WinMain(
         }
         
         // render here
-//#if false
         animation_offset++;
         UpdateBitmap();
 
         HDC device_context = GetDC(window_handle);
-        RECT client_rect;
-        GetClientRect(window_handle, &client_rect);
-        int window_width = client_rect.right - client_rect.left;
-        int window_height = client_rect.bottom - client_rect.top;
-        Win32UpdateWindow(device_context, client_rect, 0, 0, window_width, window_height);
+        {
+            Couple window_dimensions = GetWindowDimensions(window_handle);
+            Win32UpdateWindow(device_context, window_dimensions);
+        }
         ReleaseDC(window_handle, device_context);
-//#endif
     }
     
     MessageBox(
