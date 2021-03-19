@@ -21,10 +21,6 @@ static bool running;
 
 //other globals
 static WinBitmap ScreenBuffer;
-//static BITMAPINFO bitmap_info;
-//static void* bitmap_memory;
-//static int bitmap_width;
-//static int bitmap_height;
 static int animation_offset;
 
 /*
@@ -137,36 +133,79 @@ WindowProc(
 {
     LRESULT result = 0;
 
-    switch(uMsg)
+    switch (uMsg)
     {
-        //sent when windows is resized.
         case WM_SIZE:
         {
+            //sent when windows is resized.
             Couple window_dimensions = GetWindowDimensions(hwnd);
             int width = window_dimensions.X;
             int height = window_dimensions.Y;
             ResizeDIBSection(width, height);
         } break;
-        //"destory" sent when app is being closed
-        //case WM_DESTROY:
-        //"close" sent when windows is asking the app to close
+        case WM_DESTROY:
+        {
+            //"destory" sent when app is being closed. So this is redundant rly
+            running = false;
+        }
         case WM_CLOSE:
         {
+            //"close" sent when windows is asking the app to close
             running = false;
         } break;
-        //sent when the app recieved focus
         case WM_ACTIVATEAPP:
         {
-            
+            //sent when the app recieved focus
         } break;
-        //windows requests to repaint for whatever reason
         case WM_PAINT:
         {
+            //windows requests to repaint for whatever reason
             Couple window_dimensions = GetWindowDimensions(hwnd);
             PAINTSTRUCT paint;
             HDC device_context = BeginPaint(hwnd, &paint);
             Win32UpdateWindow(device_context, window_dimensions);
             EndPaint(hwnd, &paint);
+        } break;
+        // system keys like (alt-f4)
+        case WM_SYSKEYDOWN:
+        case WM_SYSKEYUP:
+        case WM_KEYDOWN:
+        {
+            // msdn: "Virtual-Key Codes"
+            unsigned int vk_code = wParam;
+            // bit 30 of lParam, "previous state", according to msdn 
+            bool was_down = ((lParam & (1 << 30)) != 0);
+            if (was_down)
+            {
+                break;
+            }
+            
+            switch (vk_code)
+            {
+                case 'A':
+                {
+                } break;
+                case 'S':
+                {
+                    
+                } break;
+                case 'D':
+                {
+                    
+                } break;
+                case 'F':
+                {
+                    
+                } break;
+                case VK_SPACE:
+                {
+                    
+                }
+            }
+        } break;
+        case WM_KEYUP:
+        {
+            
         } break;
         default:
         {
@@ -184,6 +223,7 @@ WinMain(
     LPSTR lpCmdLine,
     int nCmdShow)
 {
+    
     WNDCLASS window_class = {};
     // These two flags tell windows to redraw the whole window when it is resized. But we aren't going to be resizing the window.
     //window_class.style = CS_HREDRAW | CS_VREDRAW;

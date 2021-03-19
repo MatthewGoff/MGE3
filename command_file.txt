@@ -1,0 +1,6 @@
+-Zi
+
+user32.lib
+gdi32.lib
+
+..\src\main.cpp
