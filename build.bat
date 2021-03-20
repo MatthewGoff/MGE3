@@ -1,9 +1,9 @@
 @echo off
 
-set build_dir=build
-rmdir /s /q %build_dir%
-mkdir %build_dir%
+if not exist build mkdir build
+if not exist build\data mkdir build\data
 
-pushd %build_dir%
-cl @..\command_file.txt
-popd
+if exist build\bin rmdir /s /q build\bin
+mkdir build\bin
+
+cl @command_file.txt

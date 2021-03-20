@@ -1,7 +1,7 @@
 @echo off
-set exe=build\main.exe
-if not exist %exe% (
-    echo Cannot find %exe%
+set sln=build\main.sln
+if not exist %sln% (
+    echo Cannot find %sln%
 ) else (
-    devenv %exe%
+    devenv %sln%
 )

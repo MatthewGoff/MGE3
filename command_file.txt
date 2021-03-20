@@ -1,6 +1,15 @@
 -Zi
 
+-I src\
+
 user32.lib
 gdi32.lib
 
-..\src\main.cpp
+-FICommon.h
+
+-Febuild\bin\main.exe
+-Fobuild\bin\
+-Fdbuild\bin\
+
+src\main.cpp
+src\Clock.cpp

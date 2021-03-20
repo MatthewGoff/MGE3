@@ -3,3 +3,6 @@
 build/
 # Matt uses /notes/ to store scratchwork, etc.
 notes/
+
+# Visual Studio
+.vs/

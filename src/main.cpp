@@ -1,4 +1,5 @@
 #include <windows.h>
+#include "Clock.h"
 
 //typedef unsigned char byte;
 
@@ -199,7 +200,11 @@ WindowProc(
                 } break;
                 case VK_SPACE:
                 {
-                    
+                    uint time = Clock::GetTime();
+                    float seconds = 3.256;//(float)time / 1000000;
+                    char my_buffer[500];
+                    sprintf(my_buffer, "Current time: %f seconds\n", seconds);
+                    OutputDebugString(my_buffer);
                 }
             }
         } break;
@@ -254,6 +259,8 @@ WinMain(
     
     animation_offset = 0;
 
+    Clock::Initialize();
+    
     running = true;
     while(running)
     {
