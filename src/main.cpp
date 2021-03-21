@@ -1,7 +1,6 @@
 #include <windows.h>
 #include "Clock.h"
-
-//typedef unsigned char byte;
+#include "Print.h"
 
 // Generic couple of integers for bundling return values
 struct Couple
@@ -17,12 +16,14 @@ struct WinBitmap
     int Height;
     void* Bits;
 };
+
 //Global variable modified by windows callback when closing.
 static bool running;
 
 //other globals
 static WinBitmap ScreenBuffer;
 static int animation_offset;
+static int InitialTime; // 32 bit value good for 277 hours.
 
 /*
  * Returns width in X coord and height in Y coord
@@ -200,11 +201,8 @@ WindowProc(
                 } break;
                 case VK_SPACE:
                 {
-                    uint time = Clock::GetTime();
-                    float seconds = 3.256;//(float)time / 1000000;
-                    char my_buffer[500];
-                    sprintf(my_buffer, "Current time: %f seconds\n", seconds);
-                    OutputDebugString(my_buffer);
+                    int32 time = Clock::GetTimeMilli() - InitialTime;
+                    Print("Current time: %f\n", time / 1000.0);
                 }
             }
         } break;
@@ -260,6 +258,7 @@ WinMain(
     animation_offset = 0;
 
     Clock::Initialize();
+    InitialTime = Clock::GetTimeMilli();
     
     running = true;
     while(running)

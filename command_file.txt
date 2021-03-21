@@ -1,3 +1,7 @@
+-Febuild\bin\main.exe
+-Fobuild\bin\
+-Fdbuild\bin\
+
 -Zi
 
 -I src\
@@ -7,9 +11,6 @@ gdi32.lib
 
 -FICommon.h
 
--Febuild\bin\main.exe
--Fobuild\bin\
--Fdbuild\bin\
-
 src\main.cpp
 src\Clock.cpp
+src\Print.cpp
