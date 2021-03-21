@@ -260,6 +260,11 @@ WinMain(
     Clock::Initialize();
     InitialTime = Clock::GetTimeMilli();
     
+    int loop_time_stamp = Clock::GetTimeMicro();
+    
+    float target_framerate = 30.0; // hertz
+    float target_frametime = 1000000.0 / target_framerate; // microseconds
+    
     running = true;
     while(running)
     {
@@ -289,6 +294,17 @@ WinMain(
             Win32UpdateWindow(device_context, window_dimensions);
         }
         ReleaseDC(window_handle, device_context);
+        
+        int current_stamp;
+        int time_elapsed;
+        do
+        {
+            current_stamp = Clock::GetTimeMicro();
+            time_elapsed = current_stamp - loop_time_stamp;
+        }
+        while (time_elapsed < target_frametime);
+        Print("Time elapsed = %u\n", time_elapsed);
+        loop_time_stamp = current_stamp;
     }
     
     MessageBox(

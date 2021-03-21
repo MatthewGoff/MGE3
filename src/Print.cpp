@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <malloc.h>
 #include "Print.h"
 
 /* The body of each Print overload is identical only because I couldn't think of
@@ -15,35 +16,31 @@ int StringLength(char* string)
 void Print(char* string, int32 var)
 {
     int length = StringLength(string) + 100;
-    char* my_buffer = (char*)malloc(length * sizeof(char));
+    char* my_buffer = (char*)alloca(length * sizeof(char));
     sprintf(my_buffer, string, var);
     OutputDebugString(my_buffer);
-    free(my_buffer);
 }
 
 void Print(char* string, int64 var)
 {
     int length = StringLength(string) + 100;
-    char* my_buffer = (char*)malloc(length * sizeof(char));
+    char* my_buffer = (char*)alloca(length * sizeof(char));
     sprintf(my_buffer, string, var);
     OutputDebugString(my_buffer);
-    free(my_buffer);
 }
 
 void Print(char* string, float var)
 {
     int length = StringLength(string) + 100;
-    char* my_buffer = (char*)malloc(length * sizeof(char));
+    char* my_buffer = (char*)alloca(length * sizeof(char));
     sprintf(my_buffer, string, var);
     OutputDebugString(my_buffer);
-    free(my_buffer);
 }
 
 void Print(char* string, double var)
 {
     int length = StringLength(string) + 100;
-    char* my_buffer = (char*)malloc(length * sizeof(char));
+    char* my_buffer = (char*)alloca(length * sizeof(char));
     sprintf(my_buffer, string, var);
     OutputDebugString(my_buffer);
-    free(my_buffer);
 }
