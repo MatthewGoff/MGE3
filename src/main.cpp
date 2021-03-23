@@ -1,6 +1,7 @@
 #include <windows.h>
 #include "Clock.h"
-#include "Print.h"
+
+void PostFatalMessage(char* message);
 
 // Generic couple of integers for bundling return values
 struct Couple
@@ -17,13 +18,19 @@ struct WinBitmap
     void* Bits;
 };
 
-//Global variable modified by windows callback when closing.
 static bool running;
 
-//other globals
 static WinBitmap ScreenBuffer;
 static int animation_offset;
-static int InitialTime; // 32 bit value good for 277 hours.
+static int InitialTime; // Milliseconds; 32 bit value good for 277 hours.
+
+/* We are looking for 4 gigabytes of memory. VirtualAlloc() will only take a 32
+ * bit value. 4 * 1024^3 happens to be the first number to overflow a 32 bit
+ * uint. We pass UINT32_MAX and VirtualAlloc() will round up to the nearest
+ * block length which will be exactly 4 gigabytes.
+*/
+static uint32 GameMemorySize = UINT32_MAX; // 4 gigabytes
+static byte* GameMemory;
 
 /*
  * Returns width in X coord and height in Y coord
@@ -87,7 +94,7 @@ static void
 ResizeDIBSection(int width, int height)
 {
     //need to allocate a new buffer every time because the size will be different.
-    if (ScreenBuffer.Bits != NULL)
+    if (ScreenBuffer.Bits != nullptr)
     {
         VirtualFree(ScreenBuffer.Bits, 0, MEM_RELEASE);
     }
@@ -234,7 +241,12 @@ WinMain(
     window_class.hInstance = hInstance;
     window_class.lpszClassName = "HandmadeHeroWindowClass";
     
-    RegisterClass(&window_class);
+    bool result = RegisterClass(&window_class);
+    if (!result)
+    {
+        PostFatalMessage("Could not register window class");
+        return 0;
+    }
 
     HWND window_handle = CreateWindowEx(
     0,
@@ -250,13 +262,48 @@ WinMain(
     hInstance,
     0);
     
-    if (window_handle == NULL)
+    if (window_handle == nullptr)
     {
-        //then there was error setting up window
+        PostFatalMessage("Could not create window");
+        return 0;
+    }
+
+    // Initialize memory
+    {
+        GameMemory = (byte*)VirtualAlloc(0, GameMemorySize, MEM_COMMIT, PAGE_READWRITE);
+        
+        if (GameMemory == nullptr)
+        {
+            PostFatalMessage("Was not granted memory");
+            return 0;
+        }
+        
+        // These test cases need to be made to catch memory access errors.
+        byte* beginning = GameMemory;
+        byte* end = GameMemory + GameMemorySize;
+        if (*beginning != 0x00 || *end != 0x00)
+        {
+            PostFatalMessage("Could not access memory");
+        }
+        
+        *beginning = 0xFF;
+        *end = 0xFF;
+
+        if (*beginning != 0xFF || *end != 0xFF)
+        {
+            PostFatalMessage("Could not write to memory");
+        }
+        
+        *beginning = 0x00;
+        *end = 0x00;
+        
+        Print("so far so good\n");
+        // Memory well-initialized at this point
     }
     
-    animation_offset = 0;
-
+    // Log: "initialization completed successfully"
+    Print("initialization completed successfully\n");
+    
     Clock::Initialize();
     InitialTime = Clock::GetTimeMilli();
     
@@ -264,6 +311,8 @@ WinMain(
     
     float target_framerate = 30.0; // hertz
     float target_frametime = 1000000.0 / target_framerate; // microseconds
+    
+    animation_offset = 0;
     
     running = true;
     while(running)
@@ -303,15 +352,106 @@ WinMain(
             time_elapsed = current_stamp - loop_time_stamp;
         }
         while (time_elapsed < target_frametime);
-        Print("Time elapsed = %u\n", time_elapsed);
+        //Print("Time elapsed = %u\n", time_elapsed);
         loop_time_stamp = current_stamp;
     }
     
-    MessageBox(
-        0,
-        "this is handmade hero",
-        "handmade hero",
-        MB_OK|MB_ICONINFORMATION);
-
     return 0;
 }
+
+void
+PostFatalMessage(char* message)
+{
+    MessageBox(
+        0,
+        "Fatal Error",
+        message,
+        MB_OK|MB_ICONINFORMATION);
+}
+
+///
+
+/*
+void
+ReadEntireFile(char* file_name)
+{
+    HANDLE file_handle;
+    file_handle = CreateFileA(
+        file_name,
+        GENERIC_READ, // We are only going to be reading
+        FILE_SHARE_READ, // don't allow other processes to write to this file
+        nullptr,
+        OPEN_EXISTING,
+        0,
+        0);
+    
+    if (file_handle == INVALID_HANDLE_VALUE)
+    {
+        // error; nothing to clean up
+    }
+    
+    LARGE_INTEGER file_size;
+    // GetFileSize (without "ex") returns two 32 bit values.
+    bool result = GetFileSizeEx(file_handle, &file_size);
+    
+    void* buffer_ptr;
+    if (result)
+    {
+        buffer_ptr = VirtualAlloc(file_size.QuadPart);
+        if (buffer_ptr == nullptr)
+        {
+            // error: we didn't get our virtual alloc
+        }
+    }
+    
+    int64 bytes_read;
+    Assert(file_size.QuadPart <= UINT32_MAX); // Read file can only read size of 32 bit integer.
+    bool result = ReadFile(
+        file_handle,
+        buffer_ptr,
+        (uint32) file_size.QuadPart,
+        &bytes_read,
+        0);
+    
+    if (!result)
+    {
+        // free memory
+    }
+    
+    BOOL CloseHandle(
+        HANDLE hObject
+    );
+    
+    return file_ptr;
+}
+
+void
+GetFileSize(char* file_name)
+{
+    HANDLE CreateFileA(
+        LPCSTR                lpFileName,
+        DWORD                 dwDesiredAccess,
+        DWORD                 dwShareMode,
+        LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+        DWORD                 dwCreationDisposition,
+        DWORD                 dwFlagsAndAttributes,
+        HANDLE                hTemplateFile
+    );
+
+    BOOL GetFileSizeEx(
+        HANDLE         hFile,
+        PLARGE_INTEGER lpFileSize
+    );
+
+    BOOL CloseHandle(
+        HANDLE hObject
+    );
+}
+
+void
+WriteEntireFile(char* file_name)
+{
+    
+}
+
+*/

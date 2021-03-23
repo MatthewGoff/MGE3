@@ -39,7 +39,6 @@ typedef unsigned char byte;
 #define Assert(expression) if(!(expression)) {*(int * )0 = 0;}
 
 #include <math.h>
-#include <stdio.h>
 
 #include "Print.h"
 

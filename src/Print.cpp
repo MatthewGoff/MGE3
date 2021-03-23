@@ -1,9 +1,10 @@
 #include <windows.h>
 #include <malloc.h>
+#include <stdio.h>
 #include "Print.h"
 
 /* The body of each Print overload is identical only because I couldn't think of
- * anything better.
+ * anything better. As far as I know C++ doesn't have any "void" data type.
 */
 
 int StringLength(char* string)
