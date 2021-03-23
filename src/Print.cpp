@@ -13,6 +13,14 @@ int StringLength(char* string)
     return length;
 }
 
+void Print(char* string)
+{
+    int length = StringLength(string) + 100;
+    char* my_buffer = (char*)alloca(length * sizeof(char));
+    sprintf(my_buffer, string);
+    OutputDebugString(my_buffer);
+}
+
 void Print(char* string, int32 var)
 {
     int length = StringLength(string) + 100;
