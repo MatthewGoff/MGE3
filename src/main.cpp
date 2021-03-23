@@ -119,8 +119,10 @@ namespace WP // "Windows Platform"
 
     //Our own helper method for actually rendering
     //...just resizes and forwards the bitmap
-    void UpdateWindow(HDC device_context, Couple window_dimensions)
+    void RefreshScreen(HWND window_handle)
     {
+        HDC device_context = GetDC(window_handle);
+        Couple window_dimensions = GetWindowDimensions(window_handle);
         StretchDIBits(
             device_context,
             0, 0, ScreenBuffer.Width, ScreenBuffer.Height,
@@ -129,10 +131,11 @@ namespace WP // "Windows Platform"
             &ScreenBuffer.BitmapInfo,
             DIB_RGB_COLORS,
             SRCCOPY);
+        ReleaseDC(window_handle, device_context);
     }
 
     //Handle windows events. Is given to windows as part of the window class which gets registered
-    LRESULT CALLBACK WindowProc(
+    LRESULT CALLBACK WindowsCallback(
         HWND hwnd,
         UINT uMsg,
         WPARAM wParam,
@@ -164,15 +167,10 @@ namespace WP // "Windows Platform"
             {
                 //sent when the app recieved focus
             } break;
-            case WM_PAINT:
-            {
-                //windows requests to repaint for whatever reason
-                Couple window_dimensions = GetWindowDimensions(hwnd);
-                PAINTSTRUCT paint;
-                HDC device_context = BeginPaint(hwnd, &paint);
-                UpdateWindow(device_context, window_dimensions);
-                EndPaint(hwnd, &paint);
-            } break;
+            // It's not neccesary to field this because the window will up updating at some fps anyways.
+            #if 0
+            case WM_PAINT: {} break;
+            #endif
             // system keys like (alt-f4)
             case WM_SYSKEYDOWN:
             case WM_SYSKEYUP:
@@ -224,6 +222,27 @@ namespace WP // "Windows Platform"
         return result;
     }
 
+    /* Process pending messages from the operating system.
+     *
+    */
+    void ProcessMessages()
+    {            
+        MSG message;
+        while (PeekMessage(&message, 0, 0, 0, PM_REMOVE))
+        {        
+            // You would think WM_QUIT translated and dispatched like all other
+            // messages. It is a special case (see handmade hero and msdn) and I
+            // don't know why.
+            if (message.message == WM_QUIT)
+            {
+                running = false;
+            }
+
+            TranslateMessage(&message);
+            DispatchMessage(&message);
+        }
+    }
+    
     // Returns number of bytes written to buffer. Returns 0 on failure.
     uint32 ReadEntireFile(byte* buffer_ptr, uint32 buffer_size, char* file_name)
     {
@@ -341,12 +360,12 @@ namespace WP // "Windows Platform"
         WNDCLASS window_class = {};
         // These two flags tell windows to redraw the whole window when it is resized. But we aren't going to be resizing the window.
         //window_class.style = CS_HREDRAW | CS_VREDRAW;
-        window_class.lpfnWndProc = WindowProc;
+        window_class.lpfnWndProc = WindowsCallback;
         window_class.hInstance = hInstance;
         window_class.lpszClassName = "HandmadeHeroWindowClass";
         
-        bool result = RegisterClass(&window_class);
-        if (!result)
+        bool success = RegisterClass(&window_class);
+        if (!success)
         {
             PostFatalMessage("Could not register window class");
             return 0;
@@ -372,6 +391,14 @@ namespace WP // "Windows Platform"
             return 0;
         }
 
+        // Set the windows scheduler granulatiry to one millisecond
+        MMRESULT mm_result = timeBeginPeriod(1);
+        if (mm_result != TIMERR_NOERROR)
+        {
+            PostFatalMessage("Could not set scheduler granularity");
+            return 0;
+        }
+        
         // Initialize memory
         {
             GameMemory = (byte*)VirtualAlloc(0, GameMemorySize, MEM_COMMIT, PAGE_READWRITE);
@@ -433,7 +460,7 @@ namespace WP // "Windows Platform"
         char msg[] = "someone wants to know";
         byte* pointer = (byte*)&msg[0];
         
-        bool success = WriteEntireFile(pointer, sizeof(msg)/sizeof(msg[0]), "new_output.txt");
+        success = WriteEntireFile(pointer, sizeof(msg)/sizeof(msg[0]), "new_output.txt");
         
         // Start loop
         int loop_time_stamp = Clock::GetTimeMicro();
@@ -441,43 +468,30 @@ namespace WP // "Windows Platform"
         running = true;
         while(running)
         {
-            MSG message;
-            // Deal with all pending windows messages
-            while (PeekMessage(&message, 0, 0, 0, PM_REMOVE))
-            {        
-                // You would think WM_QUIT translated and dispatched like all other
-                // messages. It is a special case (see handmade hero and msdn) and I
-                // don't know why.
-                if (message.message == WM_QUIT)
-                {
-                    running = false;
-                }
-
-                TranslateMessage(&message);
-                DispatchMessage(&message);
-            }
+            ProcessMessages();
             
             // render here
             animation_offset++;
             UpdateBitmap();
+            // end rendering
 
-            HDC device_context = GetDC(window_handle);
-            {
-                Couple window_dimensions = GetWindowDimensions(window_handle);
-                UpdateWindow(device_context, window_dimensions);
-            }
-            ReleaseDC(window_handle, device_context);
-            
-            int current_stamp;
+            int sleep_duration;
             int time_elapsed;
             do
             {
-                current_stamp = Clock::GetTimeMicro();
-                time_elapsed = current_stamp - loop_time_stamp;
+                time_elapsed = Clock::GetTimeMicro() - loop_time_stamp;
+                sleep_duration = target_frametime - time_elapsed;
+                if (sleep_duration > 0)
+                {
+                    //Sleep(sleep_duration);
+                }
+                //Sleep(num); //milliseconds
             }
-            while (time_elapsed < target_frametime);
+            while (sleep_duration > 0);
             //Print("Time elapsed = %u\n", time_elapsed);
-            loop_time_stamp = current_stamp;
+            loop_time_stamp = Clock::GetTimeMicro();
+            
+            RefreshScreen(window_handle);
         }
         
         return 0;

@@ -8,6 +8,7 @@
 
 user32.lib
 gdi32.lib
+winmm.lib
 
 -FICommon.h
 
