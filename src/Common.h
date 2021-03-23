@@ -38,8 +38,14 @@ typedef unsigned char byte;
 
 #define Assert(expression) if(!(expression)) {*(int * )0 = 0;}
 
-#include <math.h>
+// Generic couple of integers for bundling return values
+struct Couple
+{
+    int X;
+    int Y;
+};
 
+#include <math.h>
 #include "Print.h"
 
 #endif
