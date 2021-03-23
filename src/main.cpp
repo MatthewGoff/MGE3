@@ -227,8 +227,7 @@ namespace WP // "Windows Platform"
     // Returns number of bytes written to buffer. Returns 0 on failure.
     uint32 ReadEntireFile(byte* buffer_ptr, uint32 buffer_size, char* file_name)
     {
-        HANDLE file_handle;
-        file_handle = CreateFileA(
+        HANDLE file_handle = CreateFileA(
             file_name,
             GENERIC_READ, // We are only going to be reading
             FILE_SHARE_READ, // don't allow other processes to write to this file
@@ -273,8 +272,7 @@ namespace WP // "Windows Platform"
 
     bool GetFileSize(char* file_name, uint64* file_size)
     {
-        HANDLE file_handle;
-        file_handle = CreateFileA(
+        HANDLE file_handle = CreateFileA(
             file_name,
             GENERIC_READ, // We are only going to be reading
             FILE_SHARE_READ, // don't allow other processes to write to this file
@@ -305,15 +303,38 @@ namespace WP // "Windows Platform"
         }
     }
 
-    /*
-    void
-    WriteEntireFile(char* file_name)
+    bool WriteEntireFile(byte* buffer_ptr, uint32 buffer_size, char* file_name)
     {
+        HANDLE file_handle = CreateFileA(
+            file_name,
+            GENERIC_WRITE,
+            0, // no file sharing
+            nullptr,
+            CREATE_ALWAYS, // Overwrite; Create if missing
+            0,
+            0);
         
+        if (file_handle == INVALID_HANDLE_VALUE)
+        {
+            return false;
+        }
+        
+        DWORD bytes_written;
+        bool result = WriteFile(
+            file_handle,
+            buffer_ptr,
+            buffer_size,
+            &bytes_written,
+            0);
+            
+        CloseHandle(file_handle);
+        if (!result || bytes_written != buffer_size)
+        {
+            return false;
+        }
+        
+        return true;
     }
-
-    */
-
     
     int Main(HINSTANCE hInstance)
     {    
@@ -408,6 +429,11 @@ namespace WP // "Windows Platform"
         uint64 file_size;
         GetFileSize("my_data.txt", &file_size);
         Print("\nFilesize = %d\n", (int64)file_size);
+        
+        char msg[] = "someone wants to know";
+        byte* pointer = (byte*)&msg[0];
+        
+        bool success = WriteEntireFile(pointer, sizeof(msg)/sizeof(msg[0]), "new_output.txt");
         
         // Start loop
         int loop_time_stamp = Clock::GetTimeMicro();
