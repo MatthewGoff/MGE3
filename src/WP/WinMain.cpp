@@ -1,29 +1,27 @@
 #include <windows.h>
 #include "Clock.h"
-#include "Main.h"
+#include "GameMain.h"
 #include "WinPlatform.h"
 
-/*
-This file (and print and clock) contain all and only the code to abstract the Windows operating system. To the best of my knowledge it is conventional and as-you-would-expect. It is my own re-creation of the first 25 installments of the "Handemade Hero" tutorials.
+/* This file (and print and clock) contain all and only the code to abstract
+ * the Windows operating system. To the best of my knowledge it is conventional
+ * and as-you-would-expect. It is my own re-creation of the first 25
+ * installments of the "Handemade Hero" tutorials.
 */
 namespace WP // "Windows Platform"
 {
-    BITMAPINFO BitmapInfo;
-    
+    // These variables will only be used by the platform layer
+    static BITMAPINFO BitmapInfo;
     static bool running;
-
     static int InitialTime; // Milliseconds; 32 bit value good for 277 hours.
 
-    /* We are looking for 4 gigabytes of memory. VirtualAlloc() will only take a 32
-     * bit value. 4 * 1024^3 happens to be the first number to overflow a 32 bit
-     * uint. We pass UINT32_MAX and VirtualAlloc() will round up to the nearest
-     * block length which will be exactly 4 gigabytes.
+    /* We are looking for 4 gigabytes of memory. VirtualAlloc() will only take
+     * a 32 bit value. 4 * 1024^3 happens to be the first number to overflow a
+     * 32 bit uint. We pass UINT32_MAX and VirtualAlloc() will round up to the
+     * nearest block length which will be exactly 4 gigabytes.
     */
-    static uint32 MainMemorySize = UINT32_MAX; // 4 gigabytes
+    static uint32 MainMemorySize = UINT32_MAX;
     static EngineMemory* MainMemory;
-
-    static uint32 FileBufferSize = 10 * MEGABYTES;
-    //static byte* FileBuffer;
 
     void PostFatalMessage(char* message)
     {
@@ -50,15 +48,11 @@ namespace WP // "Windows Platform"
         return result;
     }
 
-    void UpdateBitmap()
-    {
-    }
-
     //(re)create our buffer (when window size changes)
     void ResizeDIBSection(int width, int height)
     {
-        MainMemory->BitmapBuffer.Width = width;
-        MainMemory->BitmapBuffer.Height = height;
+        MainMemory->ScreenBuffer.Width = width;
+        MainMemory->ScreenBuffer.Height = height;
         
         //standard values from handmade hero
         BitmapInfo.bmiHeader.biSize = sizeof(BitmapInfo.bmiHeader);
@@ -78,9 +72,9 @@ namespace WP // "Windows Platform"
         Couple window_dimensions = GetWindowDimensions(window_handle);
         StretchDIBits(
             device_context,
-            0, 0, MainMemory->BitmapBuffer.Width, MainMemory->BitmapBuffer.Height,
+            0, 0, MainMemory->ScreenBuffer.Width, MainMemory->ScreenBuffer.Height,
             0, 0, window_dimensions.X, window_dimensions.Y,
-            &MainMemory->BitmapBuffer,
+            &MainMemory->ScreenBuffer,
             &BitmapInfo,
             DIB_RGB_COLORS,
             SRCCOPY);
@@ -208,7 +202,7 @@ namespace WP // "Windows Platform"
     }
     
     // Returns number of bytes written to buffer. Returns 0 on failure.
-    uint32 ReadEntireFile(byte* buffer_ptr, uint32 buffer_size, char* file_name)
+    uint32 ReadEntireFile(void* buffer_ptr, uint32 buffer_size, char* file_name)
     {
         HANDLE file_handle = CreateFileA(
             file_name,
@@ -323,8 +317,6 @@ namespace WP // "Windows Platform"
     {
         POINT position;
         GetCursorPos(&position);
-        position.x;
-        position.y;
         
         ScreenToClient(window_handle, &position);
         MainMemory->ControlInput.MouseX = position.x;
@@ -333,50 +325,67 @@ namespace WP // "Windows Platform"
         //Print("%d)\n", position.y);
     }
     
-    int WinMain(HINSTANCE hInstance)
+    // Runs once after initialization and before the main loop
+    void Fluff()
     {
-        // Initialize memory
+        uint32 bytes_read = ReadEntireFile(
+            &MainMemory->FileBuffer,
+            MainMemory->FileBuffer.Size,
+            "my_data.txt");
+        
+        Print("bytes_read = %d\n", (int64)bytes_read);
+        //Print((char*)FileBuffer);
+        
+        uint64 file_size;
+        GetFileSize("my_data.txt", &file_size);
+        Print("\nFilesize = %d\n", (int64)file_size);
+        
+        char msg[] = "someone wants to know";
+        byte* pointer = (byte*)&msg[0];
+        
+        bool success = WriteEntireFile(pointer, sizeof(msg)/sizeof(msg[0]), "new_output.txt");
+    }
+    
+    // Returns success boolean
+    bool InitializeMemory()
+    {
+        //Actual physical pages are not allocated unless/until the virtual addresses are actually accessed.
+        
+        // It is not clear to me why mem_reserve is neccesary on top of mem_commit but it appears to be conventional.
+        MainMemory = (EngineMemory*)VirtualAlloc(0, MainMemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+        
+        if (MainMemory == nullptr)
         {
-            //Actual physical pages are not allocated unless/until the virtual addresses are actually accessed.
-            
-            // It is not clear to me why mem_reserve is neccesary on top of mem_commit but it appears to be conventional.
-            MainMemory = (EngineMemory*)VirtualAlloc(0, MainMemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-            
-            if (MainMemory == nullptr)
-            {
-                PostFatalMessage("Was not granted memory");
-                return 0;
-            }
-            
-            /* These test cases should be made to catch memory access errors.
-             * Which ins't really possible without try/catch. I could try
-             *  compiling this separately to avoid the general overhead.
-            */
-            byte* beginning = (byte*)MainMemory;
-            byte* end = beginning + MainMemorySize;
-            if (*beginning != 0x00 || *end != 0x00)
-            {
-                PostFatalMessage("Could not access memory");
-            }
-            
-            *beginning = 0xFF;
-            *end = 0xFF;
-
-            if (*beginning != 0xFF || *end != 0xFF)
-            {
-                PostFatalMessage("Could not write to memory");
-            }
-            
-            *beginning = 0x00;
-            *end = 0x00;
-            
-            Print("so far so good\n");
-            // Memory well-initialized at this point
-            
-            MainMemory->Heap = (byte*)MainMemory + sizeof(MainMemory);
-            //FileBuffer = MainMemory->Heap; // first block on the heap
+            return false;
         }
         
+        /* These test cases should be made to catch memory access errors.
+         * Which ins't really possible without try/catch. I could try
+         *  compiling this separately to avoid the general overhead.
+        */
+        byte* beginning = (byte*)MainMemory;
+        byte* end = beginning + MainMemorySize;
+        if (*beginning != 0x00 || *end != 0x00)
+        {
+            return false;
+        }
+        
+        *beginning = 0xFF;
+        *end = 0xFF;
+
+        if (*beginning != 0xFF || *end != 0xFF)
+        {
+            return false;
+        }
+        
+        *beginning = 0x00;
+        *end = 0x00;
+        
+        return true;
+    }
+
+    HWND InitializeWindow(HINSTANCE hInstance)
+    {
         WNDCLASS window_class = {};
         // These two flags tell windows to redraw the whole window when it is resized. But we aren't going to be resizing the window.
         //window_class.style = CS_HREDRAW | CS_VREDRAW;
@@ -387,8 +396,7 @@ namespace WP // "Windows Platform"
         bool success = RegisterClass(&window_class);
         if (!success)
         {
-            PostFatalMessage("Could not register window class");
-            return 0;
+            return nullptr;
         }
 
         HWND window_handle = CreateWindowEx(
@@ -405,6 +413,19 @@ namespace WP // "Windows Platform"
         hInstance,
         0);
         
+        return window_handle;
+    }
+    
+    int WinMain(HINSTANCE hInstance)
+    {
+        // Memory needs to be initialized first. Discovered experimentally that the window will try to display as soon as it's created, before we create the buffer.
+        bool success = InitializeMemory();
+        if (!success)
+        {
+            PostFatalMessage("Could not allocate memory");
+            return 0;
+        }
+        HWND window_handle = InitializeWindow(hInstance);
         if (window_handle == nullptr)
         {
             PostFatalMessage("Could not create window");
@@ -423,36 +444,17 @@ namespace WP // "Windows Platform"
             return 0;
         }
         
-        // Log: "initialization completed successfully"
-        Print("initialization completed successfully\n");
-        
         Clock::Initialize();
         InitialTime = Clock::GetTimeMilli();
         
         float target_framerate = 30.0; // hertz
         float target_frametime = 1000000.0 / target_framerate; // microseconds
         
+        InitializeGame(MainMemory);
+        
         // End initialization
-        uint32 bytes_read = ReadEntireFile(
-            (byte*)&MainMemory->FileBuffer,
-            FileBufferSize,
-            "my_data.txt");
-        
-        Print("bytes_read = %d\n", (int64)bytes_read);
-        //Print((char*)FileBuffer);
-        
-        uint64 file_size;
-        GetFileSize("my_data.txt", &file_size);
-        Print("\nFilesize = %d\n", (int64)file_size);
-        
-        char msg[] = "someone wants to know";
-        byte* pointer = (byte*)&msg[0];
-        
-        success = WriteEntireFile(pointer, sizeof(msg)/sizeof(msg[0]), "new_output.txt");
-        
-        Print("sizeof = %d", (int64)sizeof(EngineMemory));
-        
-        int var = InitializeGame(MainMemory);
+
+        Fluff();
         
         // Start loop
         int loop_time_stamp = Clock::GetTimeMicro();
@@ -463,13 +465,7 @@ namespace WP // "Windows Platform"
             ProcessMessages();
             ProcessMouse(window_handle);
             
-            int my_result = Main(MainMemory, 32);
-            //Print("my_result = %d\n", (int64)my_result);
-            
-            // render here
-            //UpdateBitmap();
-            // Don't render here, let the game do it
-            // end rendering
+            GameMain(MainMemory, 32);
 
             int sleep_duration;
             int time_elapsed;
@@ -479,7 +475,6 @@ namespace WP // "Windows Platform"
                 sleep_duration = target_frametime - time_elapsed;
                 if (sleep_duration > 0)
                 {
-                    //Print("Starting sleep");
                     Sleep(sleep_duration / 1000);
                 }
                 float sleep_percent = (float)sleep_duration / (float)target_frametime;

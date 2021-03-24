@@ -2,26 +2,24 @@
 The purpose of this file (for the time being) is to display a circle that follows the mouse. Then we'll do bitmap
 */
 
-#include "Main.h"
+#include "GameMain.h"
 #include "Print.h"
 
 int animation_offset;
 
-int InitializeGame(EngineMemory* main_memory)
+void InitializeGame(EngineMemory* main_memory)
 {
     animation_offset = 0;
-    return 277;
 }
 
 void UpdateBuffer(EngineMemory* main_memory)
 {
-    Print("UpdatingBuffer\n");
-    for (int y = 0; y < main_memory->BitmapBuffer.Height; y++)
+    for (int y = 0; y < main_memory->ScreenBuffer.Height; y++)
     {
-        for (int x = 0; x < main_memory->BitmapBuffer.Width; x++)
+        for (int x = 0; x < main_memory->ScreenBuffer.Width; x++)
         {
-            int index = (y * main_memory->BitmapBuffer.Width) + x;
-            unsigned int* pixel_address = (unsigned int*) main_memory->BitmapBuffer.bytes + index;
+            int index = (y * main_memory->ScreenBuffer.Width) + x;
+            unsigned int* pixel_address = (unsigned int*) main_memory->ScreenBuffer.bytes + index;
             
             int r = 0x00;
             int g = 0x00;
@@ -53,9 +51,8 @@ void UpdateBuffer(EngineMemory* main_memory)
     }
 }
 
-int Main(EngineMemory* engine_memory, uint32 milliseconds_passed)
+void GameMain(EngineMemory* engine_memory, uint32 milliseconds_passed)
 {
     animation_offset++;
     UpdateBuffer(engine_memory);
-    return engine_memory->ControlInput.MouseX;
 }

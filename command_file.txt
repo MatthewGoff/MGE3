@@ -17,4 +17,4 @@ winmm.lib
 src\WP\WinMain.cpp
 src\WP\Clock.cpp
 src\WP\Print.cpp
-src\Engine\Main.cpp
+src\Engine\GameMain.cpp
