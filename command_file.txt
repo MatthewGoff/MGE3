@@ -5,6 +5,8 @@
 -Zi
 
 -I src\
+-I src\Engine
+-I src\WP
 
 user32.lib
 gdi32.lib
@@ -12,6 +14,7 @@ winmm.lib
 
 -FICommon.h
 
-src\main.cpp
-src\Clock.cpp
-src\Print.cpp
+src\WP\WinMain.cpp
+src\WP\Clock.cpp
+src\WP\Print.cpp
+src\Engine\Main.cpp
