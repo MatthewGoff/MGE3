@@ -365,6 +365,9 @@ namespace WP // "Windows Platform"
         position.y;
         
         ScreenToClient(window_handle, &position);
+        
+        //Print("position = (%d, ", position.x);
+        //Print("%d)\n", position.y);
     }
     
     int Main(HINSTANCE hInstance)
