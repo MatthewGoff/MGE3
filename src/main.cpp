@@ -262,9 +262,9 @@ namespace WP // "Windows Platform"
         
         LARGE_INTEGER file_size;
         // GetFileSize (without "ex") returns two 32 bit values.
-        bool result = GetFileSizeEx(file_handle, &file_size);
+        bool sucess = GetFileSizeEx(file_handle, &file_size);
         
-        if (!result || file_size.QuadPart > buffer_size)
+        if (!sucess || file_size.QuadPart > buffer_size)
         {
             CloseHandle(file_handle);
             return 0;
@@ -272,14 +272,14 @@ namespace WP // "Windows Platform"
         Assert(file_size.QuadPart <= UINT32_MAX); // restriction of ReadFile()
         
         DWORD bytes_read;
-        result = ReadFile(
+        sucess = ReadFile(
             file_handle,
             buffer_ptr,
             (uint32) file_size.QuadPart,
             &bytes_read,
             0);
         
-        if (!result)
+        if (!sucess)
         {
             CloseHandle(file_handle);
             return 0;
