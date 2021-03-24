@@ -32,8 +32,8 @@ namespace WP // "Windows Platform"
     {
         MessageBox(
             0,
-            "Fatal Error",
             message,
+            "Fatal Error",
             MB_OK|MB_ICONINFORMATION);
     }
 
@@ -171,48 +171,6 @@ namespace WP // "Windows Platform"
             #if 0
             case WM_PAINT: {} break;
             #endif
-            // system keys like (alt-f4)
-            case WM_SYSKEYDOWN:
-            case WM_SYSKEYUP:
-            case WM_KEYDOWN:
-            {
-                // msdn: "Virtual-Key Codes"
-                unsigned int vk_code = wParam;
-                // bit 30 of lParam, "previous state", according to msdn 
-                bool was_down = ((lParam & (1 << 30)) != 0);
-                if (was_down)
-                {
-                    break;
-                }
-                
-                switch (vk_code)
-                {
-                    case 'A':
-                    {
-                    } break;
-                    case 'S':
-                    {
-                        
-                    } break;
-                    case 'D':
-                    {
-                        
-                    } break;
-                    case 'F':
-                    {
-                        
-                    } break;
-                    case VK_SPACE:
-                    {
-                        int32 time = Clock::GetTimeMilli() - InitialTime;
-                        Print("Current time: %f\n", time / 1000.0);
-                    }
-                }
-            } break;
-            case WM_KEYUP:
-            {
-                
-            } break;
             default:
             {
                 result = DefWindowProc(hwnd, uMsg, wParam, lParam);
@@ -229,15 +187,59 @@ namespace WP // "Windows Platform"
     {            
         MSG message;
         while (PeekMessage(&message, 0, 0, 0, PM_REMOVE))
-        {        
-            // You would think WM_QUIT translated and dispatched like all other
-            // messages. It is a special case (see handmade hero and msdn) and I
-            // don't know why.
-            if (message.message == WM_QUIT)
+        {
+            switch (message.message)
             {
-                running = false;
+                /* You would think WM_QUIT translated and dispatched like all other messages. It is a special case (see handmade hero and msdn) and I don't know why. */
+                if (message.message == WM_QUIT)
+                {
+                    running = false;
+                }
+                #if 0
+                // system keys like (alt-f4)
+                case WM_SYSKEYDOWN:
+                case WM_SYSKEYUP:
+                #endif
+                case WM_KEYDOWN:
+                {
+                    // msdn: "Virtual-Key Codes"
+                    unsigned int vk_code = message.wParam;
+                    // bit 30 of lParam, "previous state", according to msdn 
+                    bool was_down = ((message.lParam & (1 << 30)) != 0);
+                    if (was_down)
+                    {
+                        break;
+                    }
+                    
+                    switch (vk_code)
+                    {
+                        case 'A':
+                        {
+                        } break;
+                        case 'S':
+                        {
+                            
+                        } break;
+                        case 'D':
+                        {
+                            
+                        } break;
+                        case 'F':
+                        {
+                            
+                        } break;
+                        case VK_SPACE:
+                        {
+                            int32 time = Clock::GetTimeMilli() - InitialTime;
+                            Print("Current time: %f\n", time / 1000.0);
+                        }
+                    }
+                } break;
+                case WM_KEYUP:
+                {
+                    
+                } break;
             }
-
             TranslateMessage(&message);
             DispatchMessage(&message);
         }
@@ -355,8 +357,18 @@ namespace WP // "Windows Platform"
         return true;
     }
     
+    void ProcessMouse(HWND window_handle)
+    {
+        POINT position;
+        GetCursorPos(&position);
+        position.x;
+        position.y;
+        
+        ScreenToClient(window_handle, &position);
+    }
+    
     int Main(HINSTANCE hInstance)
-    {    
+    {
         WNDCLASS window_class = {};
         // These two flags tell windows to redraw the whole window when it is resized. But we aren't going to be resizing the window.
         //window_class.style = CS_HREDRAW | CS_VREDRAW;
@@ -405,7 +417,10 @@ namespace WP // "Windows Platform"
         
         // Initialize memory
         {
-            GameMemory = (byte*)VirtualAlloc(0, GameMemorySize, MEM_COMMIT, PAGE_READWRITE);
+            //Actual physical pages are not allocated unless/until the virtual addresses are actually accessed.
+            
+            // It is not clear to me why mem_reserve is neccesary on top of mem_commit but it appears to be conventional.
+            GameMemory = (byte*)VirtualAlloc(0, GameMemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
             
             if (GameMemory == nullptr)
             {
@@ -473,9 +488,10 @@ namespace WP // "Windows Platform"
         int loop_time_stamp = Clock::GetTimeMicro();
         
         running = true;
-        while(running)
+        while (running)
         {
             ProcessMessages();
+            ProcessMouse(window_handle);
             
             // render here
             animation_offset++;
