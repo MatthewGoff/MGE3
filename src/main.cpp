@@ -362,7 +362,7 @@ namespace WP // "Windows Platform"
         //window_class.style = CS_HREDRAW | CS_VREDRAW;
         window_class.lpfnWndProc = WindowsCallback;
         window_class.hInstance = hInstance;
-        window_class.lpszClassName = "HandmadeHeroWindowClass";
+        window_class.lpszClassName = "MGEWindowClass";
         
         bool success = RegisterClass(&window_class);
         if (!success)
@@ -374,7 +374,7 @@ namespace WP // "Windows Platform"
         HWND window_handle = CreateWindowEx(
         0,
         window_class.lpszClassName,
-        "Handmade Hero",
+        "MGE",
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
@@ -391,7 +391,11 @@ namespace WP // "Windows Platform"
             return 0;
         }
 
-        // Set the windows scheduler granulatiry to one millisecond
+        /* timeBeginPeriod() has a misleading name. It will set the Windows
+         * Scheduler granulatiry (in milliseconds). This will determine how
+         * frequenly the scheduler checks our resume condition once we call
+         * Sleep().
+        */
         MMRESULT mm_result = timeBeginPeriod(1);
         if (mm_result != TIMERR_NOERROR)
         {
@@ -409,7 +413,10 @@ namespace WP // "Windows Platform"
                 return 0;
             }
             
-            // These test cases need to be made to catch memory access errors.
+            /* These test cases should be made to catch memory access errors.
+             * Which ins't really possible without try/catch. I could try
+             *  compiling this separately to avoid the general overhead.
+            */
             byte* beginning = GameMemory;
             byte* end = GameMemory + GameMemorySize;
             if (*beginning != 0x00 || *end != 0x00)
@@ -477,17 +484,19 @@ namespace WP // "Windows Platform"
 
             int sleep_duration;
             int time_elapsed;
-            do
+            
             {
                 time_elapsed = Clock::GetTimeMicro() - loop_time_stamp;
                 sleep_duration = target_frametime - time_elapsed;
                 if (sleep_duration > 0)
                 {
-                    //Sleep(sleep_duration);
+                    //Print("Starting sleep");
+                    Sleep(sleep_duration / 1000);
                 }
-                //Sleep(num); //milliseconds
+                float sleep_percent = (float)sleep_duration / (float)target_frametime;
+                //Print("Sleep percent = %f\n", sleep_percent);
             }
-            while (sleep_duration > 0);
+            //while (sleep_duration > 0);
             //Print("Time elapsed = %u\n", time_elapsed);
             loop_time_stamp = Clock::GetTimeMicro();
             
