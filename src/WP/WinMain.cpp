@@ -472,7 +472,7 @@ namespace WP // "Windows Platform"
             ProcessMessages();
             ProcessMouse(window_handle, &RootMemory->ControlInput);
             
-            GameMain(&RootMemory->ScreenBuffer, 32);
+            GameMain(&RootMemory->ScreenBuffer, &RootMemory->ControlInput, 32);
 
             int sleep_duration;
             int time_elapsed;

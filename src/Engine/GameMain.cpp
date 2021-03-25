@@ -12,7 +12,7 @@ void InitializeGame(RootMemory* RootMemory)
     animation_offset = 0;
 }
 
-void UpdateBuffer(ScreenBuffer* ScreenBuffer)
+void UpdateBuffer(ScreenBuffer* ScreenBuffer, int MouseX, int MouseY)
 {
     for (int y = 0; y < ScreenBuffer->Height; y++)
     {
@@ -46,13 +46,24 @@ void UpdateBuffer(ScreenBuffer* ScreenBuffer)
             // Windows specific ordering explained on handmade hero.
             int color = (a << (8 * 3)) + (r << (8 * 2)) + (g << (8 * 1)) + b;
 
+            int dx = x - MouseX;
+            int dy = y - MouseY;
+            int asqrd = dx * dx;
+            int bsqrd = dy * dy;
+            int csqrd = asqrd + bsqrd;
+            float distance = sqrt(csqrd);
+            if (distance < 50)
+            {
+                color = 0x00000000;
+            }
+            
             *pixel_address = color;
         }
     }
 }
 
-void GameMain(ScreenBuffer* ScreenBuffer, uint32 milliseconds_passed)
+void GameMain(ScreenBuffer* ScreenBuffer, ControlInput* ControlInput, uint32 milliseconds_passed)
 {
     animation_offset++;
-    UpdateBuffer(ScreenBuffer);
+    UpdateBuffer(ScreenBuffer, ControlInput->MouseX, ControlInput->MouseY);
 }
