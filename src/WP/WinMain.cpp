@@ -1,7 +1,7 @@
 #include <windows.h>
 #include "Clock.h"
 #include "GameMain.h"
-//
+
 /* This file (and print and clock) contain all and only the code to abstract
  * the Windows operating system. To the best of my knowledge it is conventional
  * and as-you-would-expect. It is my own re-creation of the first 25
@@ -9,7 +9,6 @@
 */
 namespace WP // "Windows Platform"
 {
-    // These variables will only be used by the platform layer
     static BITMAPINFO BitmapInfo;
     static bool running;
     static int InitialTime; // Milliseconds; 32 bit value good for 277 hours.
@@ -19,8 +18,7 @@ namespace WP // "Windows Platform"
      * 32 bit uint. We pass UINT32_MAX and VirtualAlloc() will round up to the
      * nearest block length which will be exactly 4 gigabytes.
     */
-    static uint32 MainMemorySize = UINT32_MAX;
-    //static EngineMemory* MainMemory;
+    static uint32 RootMemorySize = UINT32_MAX;
     
     void PostFatalMessage(char* message)
     {
@@ -32,7 +30,7 @@ namespace WP // "Windows Platform"
     }
 
     /*
-     * Returns width in X coord and height in Y coord
+     * Returns width in Couple.X and height in Couple.Y
      */
     Couple GetWindowDimensions(HWND window_handle)
     {
@@ -47,7 +45,6 @@ namespace WP // "Windows Platform"
         return result;
     }
 
-    //(re)create our buffer (when window size changes)
     void PopulateBitmapInfo(int width, int height)
     {        
         //standard values from handmade hero
@@ -88,6 +85,7 @@ namespace WP // "Windows Platform"
 
         switch (uMsg)
         {
+            // It's not neccesary to field WM_SIZE because we won't ever let the user resize the window
             #if 0
             case WM_SIZE:
             {
@@ -100,7 +98,7 @@ namespace WP // "Windows Platform"
             #endif
             case WM_DESTROY:
             {
-                //"destory" sent when app is being closed. So this is redundant rly
+                //"destory" sent when app is being closed. So this is redundant rly, idk
                 running = false;
             }
             case WM_CLOSE:
@@ -153,7 +151,7 @@ namespace WP // "Windows Platform"
                     bool was_down = ((message.lParam & (1 << 30)) != 0);
                     if (was_down)
                     {
-                        break;
+                        break; // Discard all down events after the first
                     }
                     
                     switch (vk_code)
@@ -205,9 +203,9 @@ namespace WP // "Windows Platform"
         HANDLE file_handle = CreateFileA(
             file_name,
             GENERIC_READ, // We are only going to be reading
-            FILE_SHARE_READ, // don't allow other processes to write to this file
+            FILE_SHARE_READ, // Don't allow other processes to write to this file
             nullptr,
-            OPEN_EXISTING, // Fail is file not found.
+            OPEN_EXISTING, // Fail if file not found.
             0,
             0);
         
@@ -250,9 +248,9 @@ namespace WP // "Windows Platform"
         HANDLE file_handle = CreateFileA(
             file_name,
             GENERIC_READ, // We are only going to be reading
-            FILE_SHARE_READ, // don't allow other processes to write to this file
+            FILE_SHARE_READ, // Don't allow other processes to write to this file
             nullptr,
-            OPEN_EXISTING, // Fail is file not found.
+            OPEN_EXISTING, // Fail if file not found.
             0,
             0);
 
@@ -324,11 +322,11 @@ namespace WP // "Windows Platform"
     }
     
     // Runs once after initialization and before the main loop
-    void Fluff(EngineMemory* MainMemory)
+    void Fluff(RootMemory* RootMemory)
     {
         uint32 bytes_read = ReadEntireFile(
-            &MainMemory->FileBuffer,
-            MainMemory->FileBuffer.Size,
+            &RootMemory->FileBuffer,
+            RootMemory->FileBuffer.Size,
             "my_data.txt");
         
         Print("bytes_read = %d\n", (int64)bytes_read);
@@ -344,12 +342,12 @@ namespace WP // "Windows Platform"
         bool success = WriteEntireFile(pointer, sizeof(msg)/sizeof(msg[0]), "new_output.txt");
     }
     
-    EngineMemory* InitializeMemory()
+    RootMemory* InitializeMemory()
     {
-        //Actual physical pages are not allocated unless/until the virtual addresses are actually accessed.
+        // Actual physical pages are not allocated unless/until the virtual addresses are actually accessed. fyi
         
         // It is not clear to me why mem_reserve is neccesary on top of mem_commit but it appears to be conventional.
-        EngineMemory* memory = (EngineMemory*)VirtualAlloc(0, MainMemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+        RootMemory* memory = (RootMemory*)VirtualAlloc(0, RootMemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
         
         if (memory == nullptr)
         {
@@ -358,10 +356,10 @@ namespace WP // "Windows Platform"
         
         /* These test cases should be made to catch memory access errors.
          * Which ins't really possible without try/catch. I could try
-         *  compiling this separately to avoid the general overhead.
+         * compiling this separately to avoid the general overhead.
         */
         byte* beginning = (byte*)memory;
-        byte* end = beginning + MainMemorySize;
+        byte* end = beginning + RootMemorySize;
         if (*beginning != 0x00 || *end != 0x00)
         {
             return nullptr;
@@ -384,7 +382,7 @@ namespace WP // "Windows Platform"
     HWND InitializeWindow(HINSTANCE hInstance)
     {
         WNDCLASS window_class = {};
-        // These two flags tell windows to redraw the whole window when it is resized. But we aren't going to be resizing the window.
+        // CS_HREDRAW and CS_VREDRAW tell windows to redraw the whole window when it is resized. But we aren't going to be resizing the window.
         //window_class.style = CS_HREDRAW | CS_VREDRAW;
         window_class.lpfnWndProc = WindowsCallback;
         window_class.hInstance = hInstance;
@@ -420,9 +418,9 @@ namespace WP // "Windows Platform"
     
     int WinMain(HINSTANCE hInstance)
     {
-        // Memory needs to be initialized first. Discovered experimentally that the window will try to display as soon as it's created, before we create the buffer.
-        EngineMemory* MainMemory = InitializeMemory();
-        if (MainMemory == nullptr)
+        // Memory needs to be initialized before window. Discovered experimentally that the window will try to display as soon as it's created, before we create the buffer. Might be possible to re-order if initializing the window as non-visible.
+        RootMemory* RootMemory = InitializeMemory();
+        if (RootMemory == nullptr)
         {
             PostFatalMessage("Could not allocate memory");
             return 0;
@@ -437,8 +435,8 @@ namespace WP // "Windows Platform"
         Couple window_dimensions = GetWindowDimensions(window_handle);
         int width = window_dimensions.X;
         int height = window_dimensions.Y;
-        MainMemory->ScreenBuffer.Width = width;
-        MainMemory->ScreenBuffer.Height = height;
+        RootMemory->ScreenBuffer.Width = width;
+        RootMemory->ScreenBuffer.Height = height;
         PopulateBitmapInfo(width, height);
         
         /* timeBeginPeriod() has a misleading name. It will set the Windows
@@ -459,11 +457,11 @@ namespace WP // "Windows Platform"
         float target_framerate = 30.0; // hertz
         float target_frametime = 1000000.0 / target_framerate; // microseconds
         
-        InitializeGame(MainMemory);
+        InitializeGame(RootMemory);
         
         // End initialization
 
-        Fluff(MainMemory);
+        Fluff(RootMemory);
         
         // Start loop
         int loop_time_stamp = Clock::GetTimeMicro();
@@ -472,13 +470,14 @@ namespace WP // "Windows Platform"
         while (running)
         {
             ProcessMessages();
-            ProcessMouse(window_handle, &MainMemory->ControlInput);
+            ProcessMouse(window_handle, &RootMemory->ControlInput);
             
-            GameMain(MainMemory, 32);
+            GameMain(&RootMemory->ScreenBuffer, 32);
 
             int sleep_duration;
             int time_elapsed;
             
+            // Not sure if it's neccesary to check sleep more than once.
             {
                 time_elapsed = Clock::GetTimeMicro() - loop_time_stamp;
                 sleep_duration = target_frametime - time_elapsed;
@@ -493,7 +492,7 @@ namespace WP // "Windows Platform"
             //Print("Time elapsed = %u\n", time_elapsed);
             loop_time_stamp = Clock::GetTimeMicro();
             
-            RefreshScreen(window_handle, &MainMemory->ScreenBuffer);
+            RefreshScreen(window_handle, &RootMemory->ScreenBuffer);
         }
         
         return 0;

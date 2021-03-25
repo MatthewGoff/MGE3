@@ -7,19 +7,19 @@ The purpose of this file (for the time being) is to display a circle that follow
 
 int animation_offset;
 
-void InitializeGame(EngineMemory* main_memory)
+void InitializeGame(RootMemory* RootMemory)
 {
     animation_offset = 0;
 }
 
-void UpdateBuffer(EngineMemory* main_memory)
+void UpdateBuffer(ScreenBuffer* ScreenBuffer)
 {
-    for (int y = 0; y < main_memory->ScreenBuffer.Height; y++)
+    for (int y = 0; y < ScreenBuffer->Height; y++)
     {
-        for (int x = 0; x < main_memory->ScreenBuffer.Width; x++)
+        for (int x = 0; x < ScreenBuffer->Width; x++)
         {
-            int index = (y * main_memory->ScreenBuffer.Width) + x;
-            unsigned int* pixel_address = (unsigned int*) main_memory->ScreenBuffer.bytes + index;
+            int index = (y * ScreenBuffer->Width) + x;
+            unsigned int* pixel_address = (unsigned int*)ScreenBuffer->bytes + index;
             
             int r = 0x00;
             int g = 0x00;
@@ -51,8 +51,8 @@ void UpdateBuffer(EngineMemory* main_memory)
     }
 }
 
-void GameMain(EngineMemory* engine_memory, uint32 milliseconds_passed)
+void GameMain(ScreenBuffer* ScreenBuffer, uint32 milliseconds_passed)
 {
     animation_offset++;
-    UpdateBuffer(engine_memory);
+    UpdateBuffer(ScreenBuffer);
 }

@@ -1,5 +1,5 @@
-#ifndef WINPLATFORM_H
-#define WINPLATFORM_H
+#ifndef PLATFORMAPI_H
+#define PLATFORMAPI_H
 
 //platform API goes here
 

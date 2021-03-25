@@ -21,7 +21,7 @@ struct FileBuffer
     int Size = 10 * MEGABYTES;
 };
 
-struct EngineMemory
+struct RootMemory
 {
     ScreenBuffer ScreenBuffer;
     ControlInput ControlInput;
