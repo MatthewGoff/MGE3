@@ -1,8 +1,7 @@
 #include <windows.h>
 #include "Clock.h"
 #include "GameMain.h"
-#include "WinPlatform.h"
-
+//
 /* This file (and print and clock) contain all and only the code to abstract
  * the Windows operating system. To the best of my knowledge it is conventional
  * and as-you-would-expect. It is my own re-creation of the first 25
@@ -21,8 +20,8 @@ namespace WP // "Windows Platform"
      * nearest block length which will be exactly 4 gigabytes.
     */
     static uint32 MainMemorySize = UINT32_MAX;
-    static EngineMemory* MainMemory;
-
+    //static EngineMemory* MainMemory;
+    
     void PostFatalMessage(char* message)
     {
         MessageBox(
@@ -49,11 +48,8 @@ namespace WP // "Windows Platform"
     }
 
     //(re)create our buffer (when window size changes)
-    void ResizeDIBSection(int width, int height)
-    {
-        MainMemory->ScreenBuffer.Width = width;
-        MainMemory->ScreenBuffer.Height = height;
-        
+    void PopulateBitmapInfo(int width, int height)
+    {        
         //standard values from handmade hero
         BitmapInfo.bmiHeader.biSize = sizeof(BitmapInfo.bmiHeader);
         BitmapInfo.bmiHeader.biWidth = width;
@@ -66,15 +62,15 @@ namespace WP // "Windows Platform"
 
     //Our own helper method for actually rendering
     //...just resizes and forwards the bitmap
-    void RefreshScreen(HWND window_handle)
+    void RefreshScreen(HWND window_handle, ScreenBuffer* ScreenBuffer)
     {
         HDC device_context = GetDC(window_handle);
         Couple window_dimensions = GetWindowDimensions(window_handle);
         StretchDIBits(
             device_context,
-            0, 0, MainMemory->ScreenBuffer.Width, MainMemory->ScreenBuffer.Height,
+            0, 0, ScreenBuffer->Width, ScreenBuffer->Height,
             0, 0, window_dimensions.X, window_dimensions.Y,
-            &MainMemory->ScreenBuffer,
+            ScreenBuffer,
             &BitmapInfo,
             DIB_RGB_COLORS,
             SRCCOPY);
@@ -92,14 +88,16 @@ namespace WP // "Windows Platform"
 
         switch (uMsg)
         {
+            #if 0
             case WM_SIZE:
             {
                 //sent when windows is resized.
                 Couple window_dimensions = GetWindowDimensions(hwnd);
                 int width = window_dimensions.X;
                 int height = window_dimensions.Y;
-                ResizeDIBSection(width, height);
+                //PopulateBitmapInfo(width, height);
             } break;
+            #endif
             case WM_DESTROY:
             {
                 //"destory" sent when app is being closed. So this is redundant rly
@@ -313,20 +311,20 @@ namespace WP // "Windows Platform"
         return true;
     }
     
-    void ProcessMouse(HWND window_handle)
+    void ProcessMouse(HWND window_handle, ControlInput* ControlInput)
     {
         POINT position;
         GetCursorPos(&position);
         
         ScreenToClient(window_handle, &position);
-        MainMemory->ControlInput.MouseX = position.x;
-        MainMemory->ControlInput.MouseY = position.y;
+        ControlInput->MouseX = position.x;
+        ControlInput->MouseY = position.y;
         //Print("position = (%d, ", position.x);
         //Print("%d)\n", position.y);
     }
     
     // Runs once after initialization and before the main loop
-    void Fluff()
+    void Fluff(EngineMemory* MainMemory)
     {
         uint32 bytes_read = ReadEntireFile(
             &MainMemory->FileBuffer,
@@ -346,28 +344,27 @@ namespace WP // "Windows Platform"
         bool success = WriteEntireFile(pointer, sizeof(msg)/sizeof(msg[0]), "new_output.txt");
     }
     
-    // Returns success boolean
-    bool InitializeMemory()
+    EngineMemory* InitializeMemory()
     {
         //Actual physical pages are not allocated unless/until the virtual addresses are actually accessed.
         
         // It is not clear to me why mem_reserve is neccesary on top of mem_commit but it appears to be conventional.
-        MainMemory = (EngineMemory*)VirtualAlloc(0, MainMemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+        EngineMemory* memory = (EngineMemory*)VirtualAlloc(0, MainMemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
         
-        if (MainMemory == nullptr)
+        if (memory == nullptr)
         {
-            return false;
+            return nullptr;
         }
         
         /* These test cases should be made to catch memory access errors.
          * Which ins't really possible without try/catch. I could try
          *  compiling this separately to avoid the general overhead.
         */
-        byte* beginning = (byte*)MainMemory;
+        byte* beginning = (byte*)memory;
         byte* end = beginning + MainMemorySize;
         if (*beginning != 0x00 || *end != 0x00)
         {
-            return false;
+            return nullptr;
         }
         
         *beginning = 0xFF;
@@ -375,13 +372,13 @@ namespace WP // "Windows Platform"
 
         if (*beginning != 0xFF || *end != 0xFF)
         {
-            return false;
+            return nullptr;
         }
         
         *beginning = 0x00;
         *end = 0x00;
         
-        return true;
+        return memory;
     }
 
     HWND InitializeWindow(HINSTANCE hInstance)
@@ -399,15 +396,20 @@ namespace WP // "Windows Platform"
             return nullptr;
         }
 
+        /*
+        style WS_OVERLAPPEDWINDOW ommited because it makes the window resizable
+        style WS_SYSMENU provides the top right exit button.
+        style WS_VISIBLE means the window is initiall visible.
+        */
         HWND window_handle = CreateWindowEx(
         0,
         window_class.lpszClassName,
         "MGE",
-        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+        WS_SYSMENU | WS_VISIBLE,
         CW_USEDEFAULT,
         CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
+        WINDOW_WIDTH,
+        WINDOW_HEIGHT,
         0,
         0,
         hInstance,
@@ -419,8 +421,8 @@ namespace WP // "Windows Platform"
     int WinMain(HINSTANCE hInstance)
     {
         // Memory needs to be initialized first. Discovered experimentally that the window will try to display as soon as it's created, before we create the buffer.
-        bool success = InitializeMemory();
-        if (!success)
+        EngineMemory* MainMemory = InitializeMemory();
+        if (MainMemory == nullptr)
         {
             PostFatalMessage("Could not allocate memory");
             return 0;
@@ -431,6 +433,13 @@ namespace WP // "Windows Platform"
             PostFatalMessage("Could not create window");
             return 0;
         }
+        
+        Couple window_dimensions = GetWindowDimensions(window_handle);
+        int width = window_dimensions.X;
+        int height = window_dimensions.Y;
+        MainMemory->ScreenBuffer.Width = width;
+        MainMemory->ScreenBuffer.Height = height;
+        PopulateBitmapInfo(width, height);
         
         /* timeBeginPeriod() has a misleading name. It will set the Windows
          * Scheduler granulatiry (in milliseconds). This will determine how
@@ -454,7 +463,7 @@ namespace WP // "Windows Platform"
         
         // End initialization
 
-        Fluff();
+        Fluff(MainMemory);
         
         // Start loop
         int loop_time_stamp = Clock::GetTimeMicro();
@@ -463,7 +472,7 @@ namespace WP // "Windows Platform"
         while (running)
         {
             ProcessMessages();
-            ProcessMouse(window_handle);
+            ProcessMouse(window_handle, &MainMemory->ControlInput);
             
             GameMain(MainMemory, 32);
 
@@ -484,7 +493,7 @@ namespace WP // "Windows Platform"
             //Print("Time elapsed = %u\n", time_elapsed);
             loop_time_stamp = Clock::GetTimeMicro();
             
-            RefreshScreen(window_handle);
+            RefreshScreen(window_handle, &MainMemory->ScreenBuffer);
         }
         
         return 0;

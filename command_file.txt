@@ -13,6 +13,8 @@ gdi32.lib
 winmm.lib
 
 -FICommon.h
+-FIConfig.h
+-FIMemory.h
 
 src\WP\WinMain.cpp
 src\WP\Clock.cpp
