@@ -4,12 +4,37 @@ The purpose of this file (for the time being) is to display a circle that follow
 
 #include "GameMain.h"
 #include "Print.h"
+#include "PlatformAPI.h"
+
+int OpenBitmap(byte* input, int input_size, byte* output, int output_size);
 
 int animation_offset;
+
+void UpdateBuffer_test(ScreenBuffer* ScreenBuffer, byte* WorkingMemory)
+{
+    for (int y = 0; y < 100; y++)
+    {
+        for (int x = 0; x < 100; x++)
+        {
+            int* from = (int*)WorkingMemory + x + (100 * y);
+            int* to = (int*)ScreenBuffer->bytes + x + (ScreenBuffer->Width * y);
+            
+            *to = *from;
+        }
+    }
+}
 
 void InitializeGame(RootMemory* RootMemory)
 {
     animation_offset = 0;
+    
+    byte* asset_location = WP::LoadFile("my_image.bmp");
+    
+    int bytes_written = OpenBitmap(asset_location, 10 * MEGABYTES, &RootMemory->WorkingMemory, 10 * MEGABYTES);
+    
+    Print("bytes_written = %d\n", (int64)bytes_written);
+
+    UpdateBuffer_test(&RootMemory->ScreenBuffer, &RootMemory->WorkingMemory);
 }
 
 void UpdateBuffer(ScreenBuffer* ScreenBuffer, int MouseX, int MouseY)
@@ -52,9 +77,13 @@ void UpdateBuffer(ScreenBuffer* ScreenBuffer, int MouseX, int MouseY)
             int bsqrd = dy * dy;
             int csqrd = asqrd + bsqrd;
             float distance = sqrt(csqrd);
-            if (distance < 50)
+            if (distance < 30)
             {
                 color = 0x00000000;
+            }
+            else if (distance < 40)
+            {
+                color = 0xFFFFFFFF;
             }
             
             *pixel_address = color;
@@ -65,5 +94,5 @@ void UpdateBuffer(ScreenBuffer* ScreenBuffer, int MouseX, int MouseY)
 void GameMain(ScreenBuffer* ScreenBuffer, ControlInput* ControlInput, uint32 milliseconds_passed)
 {
     animation_offset++;
-    UpdateBuffer(ScreenBuffer, ControlInput->MouseX, ControlInput->MouseY);
+    //UpdateBuffer(ScreenBuffer, ControlInput->MouseX, ControlInput->MouseY);
 }

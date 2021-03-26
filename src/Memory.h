@@ -3,10 +3,9 @@
 
 struct ScreenBuffer
 {
-    //byte bytes[960*540*4];
-    byte bytes[WINDOW_WIDTH * WINDOW_HEIGHT * 4];
     int Width;
     int Height;
+    byte bytes[WINDOW_WIDTH * WINDOW_HEIGHT * 4]; // 4 bytes per pixel
 };
 
 struct ControlInput
@@ -20,12 +19,24 @@ struct FileBuffer
     byte bytes[10 * MEGABYTES];
     int Size = 10 * MEGABYTES;
 };
+/*
+#define ASSET_VACANT 0
+#define ASSET_REQUESTED 1
+#define ASSET_READY 2
 
+struct AssetExchange
+{
+    int status;
+    byte bytes[10 * MEGABYTES];
+};
+*/
 struct RootMemory
 {
     ScreenBuffer ScreenBuffer;
     ControlInput ControlInput;
     FileBuffer FileBuffer;
+    //AssetExchange AssetExchange;
+    byte WorkingMemory;
 };
 
 #endif

@@ -15,8 +15,11 @@ winmm.lib
 -FICommon.h
 -FIConfig.h
 -FIMemory.h
+-FIUtil.h
 
 src\WP\WinMain.cpp
 src\WP\Clock.cpp
 src\WP\Print.cpp
 src\Engine\GameMain.cpp
+src\Engine\OpenBitmap.cpp
+src\Util.cpp
