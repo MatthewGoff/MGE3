@@ -1,23 +1,24 @@
-
+#include "PlatformAPI.h"
 
 /*
+Takes the location of a (.bmp) file loaded into memory and creates a re-formatted copy at the output location.
+
 Parameter input_size according to whoever alocated the buffer, not the file format.
 
 Returns number of bytes used in output; zero on error
 */
-int OpenBitmap(byte* input, int input_size, byte* output, int output_size)
+int DecodeBitmap(byte* input, int input_size, byte* output, int output_size)
 {
-    
     // Byte offsets according to the specification of the BMP file format.
     short signature = *(short*)(input + 0x00); // expecting "BM"
     if (signature != ('M' << 8) + 'B') {return 0;}
-    if (input_size < 0x1E + 4) {return 0;}
+    if (input_size < 0x1E + 4) {return 0;} // Size of header
     
     int file_size = *(int*)(input + 0x02);    
     int data_offset = *(int*)(input + 0x0A);
     int width = *(int*)(input + 0x12);
     int height = *(int*)(input + 0x16);
-    int bytes_per_pixel = *(int*)(input + 0x1C) / 8; // expecting 3
+    int bytes_per_pixel = *(int*)(input + 0x1C) / BITSPERBYTE; // expecting 3
     int compression_type = *(int*)(input + 0x1E); // expecting 0 (no compression)
     
     byte* pixels = input + data_offset;
@@ -45,4 +46,20 @@ int OpenBitmap(byte* input, int input_size, byte* output, int output_size)
     }
     
     return num_pixels * 4;
+}
+
+/*
+Returns number of bytes written to destination or zero on failure.
+*/
+int OpenBitmap(byte* mem, int mem_size, byte* destination, int dest_size, char* path)
+{
+    uint32 bytes_read = WP::ReadEntireFile(mem, 10 * MEGABYTES, path);
+    if (bytes_read == 0)
+    {
+        return 0;
+    }
+        
+    int bytes_written = DecodeBitmap(mem, 10 * MEGABYTES, destination, 10 * MEGABYTES);
+    
+    return bytes_written;
 }

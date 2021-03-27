@@ -16,6 +16,7 @@ winmm.lib
 -FIConfig.h
 -FIMemory.h
 -FIUtil.h
+-FImalloc.h
 
 src\WP\WinMain.cpp
 src\WP\Clock.cpp

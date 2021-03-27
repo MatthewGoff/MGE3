@@ -32,6 +32,7 @@ typedef unsigned char byte;
 
 #define UINT32_MAX (0xFFFFFFFF)
 
+#define BITSPERBYTE (8)
 #define KILOBYTES (1024)
 #define MEGABYTES (1024 * KILOBYTES)
 #define GIGABYTES (1024 * MEGABYTES)

@@ -1,12 +1,4 @@
-/*
-The purpose of this file (for the time being) is to display a circle that follows the mouse. Then we'll do bitmap
-*/
-
-#include "GameMain.h"
-#include "Print.h"
-#include "PlatformAPI.h"
-
-int OpenBitmap(byte* input, int input_size, byte* output, int output_size);
+#include "OpenBitmap.h"
 
 int animation_offset;
 
@@ -27,14 +19,18 @@ void UpdateBuffer_test(ScreenBuffer* ScreenBuffer, byte* WorkingMemory)
 void InitializeGame(RootMemory* RootMemory)
 {
     animation_offset = 0;
+    byte* asset = (byte*)malloc(10 * MEGABYTES);
     
-    byte* asset_location = WP::LoadFile("my_image.bmp");
+    byte* mem = (byte*)malloc(10 * MEGABYTES);
+    int success = OpenBitmap(mem, 10 * MEGABYTES, asset, 10 * MEGABYTES, "my_image.bmp");
+    free(mem);
     
-    int bytes_written = OpenBitmap(asset_location, 10 * MEGABYTES, &RootMemory->WorkingMemory, 10 * MEGABYTES);
+    if (success > 0)
+    {
+        UpdateBuffer_test(&RootMemory->ScreenBuffer, asset);
+    }
     
-    Print("bytes_written = %d\n", (int64)bytes_written);
-
-    UpdateBuffer_test(&RootMemory->ScreenBuffer, &RootMemory->WorkingMemory);
+    free(asset);
 }
 
 void UpdateBuffer(ScreenBuffer* ScreenBuffer, int MouseX, int MouseY)

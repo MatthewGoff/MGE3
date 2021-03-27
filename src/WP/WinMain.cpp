@@ -1,7 +1,6 @@
 #include <windows.h>
 #include "Clock.h"
 #include "GameMain.h"
-#include "Globals.h"
 
 /* This file (and print and clock) contain all and only the code to abstract
  * the Windows operating system. To the best of my knowledge it is conventional
@@ -243,20 +242,6 @@ namespace WP // "Windows Platform"
         CloseHandle(file_handle);
         return bytes_read;
     }
-
-    byte* LoadFile(char* path)
-    {
-        uint32 bytes_read = ReadEntireFile(FileBuffer_glb, 10 * MEGABYTES, path);
-        
-        if (bytes_read > 0)
-        {
-            return (byte*)FileBuffer_glb;
-        }
-        else
-        {
-            return nullptr;
-        }
-    }
     
     bool GetFileSize(char* file_name, uint64* file_size)
     {
@@ -446,9 +431,6 @@ namespace WP // "Windows Platform"
             PostFatalMessage("Could not create window");
             return 0;
         }
-        
-        FileBuffer_glb = &RootMemory->FileBuffer;
-        WorkingMemory_glb = &RootMemory->WorkingMemory;
         
         Couple window_dimensions = GetWindowDimensions(window_handle);
         int width = window_dimensions.X;
