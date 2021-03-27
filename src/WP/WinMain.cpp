@@ -1,6 +1,6 @@
 #include <windows.h>
 #include "Clock.h"
-#include "GameMain.h"
+#include "Engine.h"
 
 /* This file (and print and clock) contain all and only the code to abstract
  * the Windows operating system. To the best of my knowledge it is conventional
@@ -67,7 +67,7 @@ namespace WP // "Windows Platform"
             device_context,
             0, 0, ScreenBuffer->Width, ScreenBuffer->Height,
             0, 0, window_dimensions.X, window_dimensions.Y,
-            &ScreenBuffer->bytes,
+            &ScreenBuffer->Pixels,
             &BitmapInfo,
             DIB_RGB_COLORS,
             SRCCOPY);
@@ -457,7 +457,7 @@ namespace WP // "Windows Platform"
         float target_framerate = 30.0; // hertz
         float target_frametime = 1000000.0 / target_framerate; // microseconds
         
-        InitializeGame(RootMemory);
+        Engine::InitializeGame(RootMemory);
         
         // End initialization
 
@@ -472,7 +472,7 @@ namespace WP // "Windows Platform"
             ProcessMessages();
             ProcessMouse(window_handle, &RootMemory->ControlInput);
             
-            GameMain(&RootMemory->ScreenBuffer, &RootMemory->ControlInput, 32);
+            Engine::GameMain(&RootMemory->ScreenBuffer, &RootMemory->ControlInput, 32);
 
             int sleep_duration;
             int time_elapsed;

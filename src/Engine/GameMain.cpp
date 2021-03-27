@@ -1,36 +1,58 @@
-#include "OpenBitmap.h"
+#include "Engine.h"
 
 int animation_offset;
+Sprite my_sprite;
+Bitmap sprite_bitmap;
 
-void UpdateBuffer_test(ScreenBuffer* ScreenBuffer, byte* WorkingMemory)
+void UpdateBuffer_test(ScreenBuffer* ScreenBuffer, byte* asset)
 {
     for (int y = 0; y < 100; y++)
     {
         for (int x = 0; x < 100; x++)
         {
-            int* from = (int*)WorkingMemory + x + (100 * y);
-            int* to = (int*)ScreenBuffer->bytes + x + (ScreenBuffer->Width * y);
+            int* from = (int*)asset + x + (100 * y);
+            int* to = (int*)ScreenBuffer->Pixels + x + (ScreenBuffer->Width * y);
             
             *to = *from;
         }
     }
 }
 
-void InitializeGame(RootMemory* RootMemory)
+void UpdateBuffer_test2(ScreenBuffer* ScreenBuffer, Sprite my_sprite)
+{
+    Bitmap alias = {};
+    alias.Width = ScreenBuffer->Width;
+    alias.Height = ScreenBuffer->Height;
+    alias.Pixels = &ScreenBuffer->Pixels[0];
+    Engine::Paste(&alias, &my_sprite);
+}
+
+void Engine::InitializeGame(RootMemory* RootMemory)
 {
     animation_offset = 0;
-    byte* asset = (byte*)malloc(10 * MEGABYTES);
+
+    sprite_bitmap = {};
+    sprite_bitmap.Width = 100;
+    sprite_bitmap.Height = 100;
+    sprite_bitmap.Pixels = (int*)malloc(10 * MEGABYTES);
     
     byte* mem = (byte*)malloc(10 * MEGABYTES);
-    int success = OpenBitmap(mem, 10 * MEGABYTES, asset, 10 * MEGABYTES, "my_image.bmp");
+    int success = Engine::OpenBitmap(mem, 10 * MEGABYTES, sprite_bitmap.Pixels, 10 * MEGABYTES, "my_image.bmp");
     free(mem);
     
-    if (success > 0)
+    if (success == 0)
     {
-        UpdateBuffer_test(&RootMemory->ScreenBuffer, asset);
+        return;
     }
     
-    free(asset);
+    my_sprite = Sprite {};
+    
+    my_sprite.Position = Couple_f {50, 50};
+    my_sprite.Width = 100;
+    my_sprite.Height = 100;
+    my_sprite.Bitmap = &sprite_bitmap;
+    
+    //UpdateBuffer_test2(&RootMemory->ScreenBuffer, my_sprite);
 }
 
 void UpdateBuffer(ScreenBuffer* ScreenBuffer, int MouseX, int MouseY)
@@ -40,7 +62,7 @@ void UpdateBuffer(ScreenBuffer* ScreenBuffer, int MouseX, int MouseY)
         for (int x = 0; x < ScreenBuffer->Width; x++)
         {
             int index = (y * ScreenBuffer->Width) + x;
-            unsigned int* pixel_address = (unsigned int*)ScreenBuffer->bytes + index;
+            unsigned int* pixel_address = (unsigned int*)ScreenBuffer->Pixels + index;
             
             int r = 0x00;
             int g = 0x00;
@@ -87,8 +109,37 @@ void UpdateBuffer(ScreenBuffer* ScreenBuffer, int MouseX, int MouseY)
     }
 }
 
-void GameMain(ScreenBuffer* ScreenBuffer, ControlInput* ControlInput, uint32 milliseconds_passed)
+void ClearBuffer(ScreenBuffer* ScreenBuffer)
+{
+    for (int y = 0; y < ScreenBuffer->Height; y++)
+    {
+        for (int x = 0; x < ScreenBuffer->Width; x++)
+        {
+            int index = (y * ScreenBuffer->Width) + x;
+            unsigned int* pixel_address = (unsigned int*)ScreenBuffer->Pixels + index;
+            
+            int color = 0x00000000;
+            
+            *pixel_address = color;
+        }
+    }
+}
+
+void Engine::GameMain(ScreenBuffer* ScreenBuffer, ControlInput* ControlInput, uint32 milliseconds_passed)
 {
     animation_offset++;
     //UpdateBuffer(ScreenBuffer, ControlInput->MouseX, ControlInput->MouseY);
+    
+    /*
+    algo:
+    1) clear buffer
+    2) for sprite in sprites
+        3) paste sprite
+    */
+    
+    my_sprite.Position.X += 2;
+    my_sprite.Position.Y += 1;
+    
+    ClearBuffer(ScreenBuffer);
+    UpdateBuffer_test2(ScreenBuffer, my_sprite);
 }

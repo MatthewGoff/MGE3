@@ -1,3 +1,4 @@
+#include "Engine.h"
 #include "PlatformAPI.h"
 
 /*
@@ -51,15 +52,15 @@ int DecodeBitmap(byte* input, int input_size, byte* output, int output_size)
 /*
 Returns number of bytes written to destination or zero on failure.
 */
-int OpenBitmap(byte* mem, int mem_size, byte* destination, int dest_size, char* path)
+int Engine::OpenBitmap(byte* mem, int mem_size, int* destination, int dest_size, char* path)
 {
     uint32 bytes_read = WP::ReadEntireFile(mem, 10 * MEGABYTES, path);
     if (bytes_read == 0)
     {
         return 0;
     }
-        
-    int bytes_written = DecodeBitmap(mem, 10 * MEGABYTES, destination, 10 * MEGABYTES);
+
+    int bytes_written = DecodeBitmap(mem, 10 * MEGABYTES, (byte*)destination, 10 * MEGABYTES);
     
     return bytes_written;
 }

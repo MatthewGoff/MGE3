@@ -5,7 +5,7 @@ struct ScreenBuffer
 {
     int Width;
     int Height;
-    byte bytes[WINDOW_WIDTH * WINDOW_HEIGHT * 4]; // 4 bytes per pixel
+    int Pixels[WINDOW_WIDTH * WINDOW_HEIGHT];// * 4]; // 4 bytes per pixel
 };
 
 struct ControlInput

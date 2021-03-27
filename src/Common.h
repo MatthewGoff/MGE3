@@ -46,6 +46,13 @@ struct Couple
     int Y;
 };
 
+// Generic couple of floats
+struct Couple_f
+{
+    float X;
+    float Y;
+};
+
 #include <math.h>
 #include "Print.h"
 
