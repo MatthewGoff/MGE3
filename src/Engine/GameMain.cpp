@@ -47,12 +47,11 @@ void Engine::InitializeGame(RootMemory* RootMemory)
     
     my_sprite = Sprite {};
     
-    my_sprite.Position = Couple_f {50, 50};
+    my_sprite.Position = Vector::float2 {50, 50};
     my_sprite.Width = 100;
     my_sprite.Height = 100;
+    my_sprite.Scale = 0.4f;
     my_sprite.Bitmap = &sprite_bitmap;
-    
-    //UpdateBuffer_test2(&RootMemory->ScreenBuffer, my_sprite);
 }
 
 void UpdateBuffer(ScreenBuffer* ScreenBuffer, int MouseX, int MouseY)
@@ -137,8 +136,8 @@ void Engine::GameMain(ScreenBuffer* ScreenBuffer, ControlInput* ControlInput, ui
         3) paste sprite
     */
     
-    my_sprite.Position.X += 2;
-    my_sprite.Position.Y += 1;
+    my_sprite.Position.x += 2;
+    my_sprite.Position.y += 1;
     
     ClearBuffer(ScreenBuffer);
     UpdateBuffer_test2(ScreenBuffer, my_sprite);

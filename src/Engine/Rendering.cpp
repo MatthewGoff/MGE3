@@ -1,44 +1,35 @@
 #include "Engine.h"
 
-int SampleBitmap(float x, float y, Bitmap* bitmap)
+int SampleBitmap(Vector::float2 point, Bitmap* bitmap)
 {
-    if (x < 0 | y < 0 | x >= bitmap->Width | y >= bitmap->Height)
+    if (point.x < 0 | point.y < 0 | point.x >= bitmap->Width | point.y >= bitmap->Height)
     {
         return 0;
     }
     
-    int* address = bitmap->Pixels + (bitmap->Width * (int)y) + (int)x;
+    int* address = bitmap->Pixels + (bitmap->Width * (int)point.y) + (int)point.x;
     return *address;
 }
 
 int BlendPixel(int x, int y, Sprite* sprite)
 {
-    float local_x = x - sprite->Position.X;
-    float local_y = y - sprite->Position.Y;
+    Vector::float2 global = Vector::float2 {(float)x, (float)y};
+    Vector::float2 local = Vector::Sub(global, sprite->Position);
     
-    int sample1 = SampleBitmap(
-        local_x + 0.25f,
-        local_y + 0.25f,
-        sprite->Bitmap);
-    int sample2 = SampleBitmap(
-        local_x + 0.25f,
-        local_y + 0.75f,
-        sprite->Bitmap);
-    int sample3 = SampleBitmap(
-        local_x + 0.75f,
-        local_y + 0.25f,
-        sprite->Bitmap);
-    int sample4 = SampleBitmap(
-        local_x + 0.75f,
-        local_y + 0.75f,
-        sprite->Bitmap);
-
-    int64 test = 0x00FF0000;
-    test += 0x00FF0000;
-    test += 0x00FF0000;
-    test += 0x00FF0000;
-    int64 test2 = test / 4;
-    int64 test3 = test >> 2;
+    Vector::float2 p1 = Vector::Add(local, 0.25f, 0.25f);
+    Vector::float2 p2 = Vector::Add(local, 0.25f, 0.75f);
+    Vector::float2 p3 = Vector::Add(local, 0.75f, 0.25f);
+    Vector::float2 p4 = Vector::Add(local, 0.75f, 0.75f);
+    
+    p1 = Vector::Div(p1, sprite->Scale);
+    p2 = Vector::Div(p2, sprite->Scale);
+    p3 = Vector::Div(p3, sprite->Scale);
+    p4 = Vector::Div(p4, sprite->Scale);
+    
+    int sample1 = SampleBitmap(p1, sprite->Bitmap);
+    int sample2 = SampleBitmap(p2, sprite->Bitmap);
+    int sample3 = SampleBitmap(p3, sprite->Bitmap);
+    int sample4 = SampleBitmap(p4, sprite->Bitmap);
 
     int64 a = (sample1 & 0xFF000000)
             + (sample2 & 0xFF000000)
@@ -74,17 +65,17 @@ int BlendPixel(int x, int y, Sprite* sprite)
 void Engine::Paste(Bitmap* destination, Sprite* sprite)
 {
 
-    int low_y = (int)sprite->Position.Y;
-    int low_x = (int)sprite->Position.X;
+    int low_y = (int)sprite->Position.y;
+    int low_x = (int)sprite->Position.x;
     
-    low_y = Max(low_y, 0);
-    low_x = Max(low_x, 0);
+    low_y = Util::Max(low_y, 0);
+    low_x = Util::Max(low_x, 0);
     
-    int high_y = (int)sprite->Position.Y + sprite->Height;
-    int high_x = (int)sprite->Position.X + sprite->Width;
+    int high_y = (int)sprite->Position.y + sprite->Height * sprite->Scale;
+    int high_x = (int)sprite->Position.x + sprite->Width * sprite->Scale;
     
-    high_y = Min(high_y, destination->Height);
-    high_x = Min(high_x, destination->Width);
+    high_y = Util::Min(high_y, destination->Height);
+    high_x = Util::Min(high_x, destination->Width);
     
     for (int y = low_y; y < high_y; y++)
     {

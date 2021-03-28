@@ -16,7 +16,7 @@ winmm.lib
 -FICommon.h
 -FIConfig.h
 -FIMemory.h
--FIUtil.h
+-FIStandard\Standard.h
 -FImalloc.h
 
 src\WP\WinMain.cpp
@@ -24,5 +24,6 @@ src\WP\Clock.cpp
 src\WP\Print.cpp
 src\Engine\GameMain.cpp
 src\Engine\OpenBitmap.cpp
-src\Util.cpp
+src\Standard\Util.cpp
 src\Engine\Rendering.cpp
+src\Standard\Vector.cpp

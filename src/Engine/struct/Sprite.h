@@ -5,9 +5,10 @@
 
 struct Sprite
 {
-    Couple_f Position;
+    Vector::float2 Position;
     int Width;
     int Height;
+    float Scale;
     Bitmap* Bitmap;
 };
 
