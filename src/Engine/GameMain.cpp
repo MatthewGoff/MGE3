@@ -2,7 +2,7 @@
 
 int animation_offset;
 Sprite my_sprite;
-Bitmap sprite_bitmap;
+Bitmap* sprite_bitmap;
 
 void UpdateBuffer_test(ScreenBuffer* ScreenBuffer, byte* asset)
 {
@@ -20,24 +20,20 @@ void UpdateBuffer_test(ScreenBuffer* ScreenBuffer, byte* asset)
 
 void UpdateBuffer_test2(ScreenBuffer* ScreenBuffer, Sprite my_sprite)
 {
-    Bitmap alias = {};
-    alias.Width = ScreenBuffer->Width;
-    alias.Height = ScreenBuffer->Height;
-    alias.Pixels = &ScreenBuffer->Pixels[0];
-    Engine::Paste(&alias, &my_sprite);
+    Bitmap* alias = (Bitmap*)ScreenBuffer;
+    Engine::Paste(alias, &my_sprite);
 }
 
 void Engine::InitializeGame(RootMemory* RootMemory)
 {
     animation_offset = 0;
 
-    sprite_bitmap = {};
-    sprite_bitmap.Width = 100;
-    sprite_bitmap.Height = 100;
-    sprite_bitmap.Pixels = (int*)malloc(10 * MEGABYTES);
+    sprite_bitmap = (Bitmap*)malloc(10 * MEGABYTES);
+    sprite_bitmap->Width = 100;
+    sprite_bitmap->Height = 100;
     
     byte* mem = (byte*)malloc(10 * MEGABYTES);
-    int success = Engine::OpenBitmap(mem, 10 * MEGABYTES, sprite_bitmap.Pixels, 10 * MEGABYTES, "my_image.bmp");
+    bool success = Engine::OpenBitmap(mem, 10 * MEGABYTES, sprite_bitmap, 10 * MEGABYTES, "1.bmp");
     free(mem);
     
     if (success == 0)
@@ -51,7 +47,7 @@ void Engine::InitializeGame(RootMemory* RootMemory)
     my_sprite.Width = 100;
     my_sprite.Height = 100;
     my_sprite.Scale = 0.4f;
-    my_sprite.Bitmap = &sprite_bitmap;
+    my_sprite.Bitmap = sprite_bitmap;
 }
 
 void UpdateBuffer(ScreenBuffer* ScreenBuffer, int MouseX, int MouseY)

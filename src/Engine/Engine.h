@@ -11,7 +11,7 @@ namespace Engine
     void GameMain(ScreenBuffer* ScreenBuffer, ControlInput* ControlInput, uint32 milliseconds_passed);
     
     // OpenBitmap.cpp
-    int OpenBitmap(byte* mem, int mem_size, int* destination, int dest_size, char* path);
+    bool OpenBitmap(byte* mem, int mem_size, Bitmap* destination, int dest_size, char* path);
     
     // Rendering.cpp
     void Paste(Bitmap* destination, Sprite* sprite);

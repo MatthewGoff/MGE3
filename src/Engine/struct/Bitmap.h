@@ -5,7 +5,7 @@ struct Bitmap
 {
     int Width;
     int Height;
-    int* Pixels;
+    int Pixels[];
 };
 
 #endif
