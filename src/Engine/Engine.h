@@ -15,6 +15,10 @@ namespace Engine
     
     // Rendering.cpp
     void Paste(Bitmap* destination, Sprite* sprite);
+    
+    // AssetManager.cpp
+    void LoadAsset(int id);
+    Bitmap* GetAsset(int id);
 }
 
 #endif

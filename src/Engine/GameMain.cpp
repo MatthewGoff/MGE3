@@ -27,27 +27,15 @@ void UpdateBuffer_test2(ScreenBuffer* ScreenBuffer, Sprite my_sprite)
 void Engine::InitializeGame(RootMemory* RootMemory)
 {
     animation_offset = 0;
-
-    sprite_bitmap = (Bitmap*)malloc(10 * MEGABYTES);
-    sprite_bitmap->Width = 100;
-    sprite_bitmap->Height = 100;
     
-    byte* mem = (byte*)malloc(10 * MEGABYTES);
-    bool success = Engine::OpenBitmap(mem, 10 * MEGABYTES, sprite_bitmap, 10 * MEGABYTES, "1.bmp");
-    free(mem);
-    
-    if (success == 0)
-    {
-        return;
-    }
+    LoadAsset(1);
     
     my_sprite = Sprite {};
-    
     my_sprite.Position = Vector::float2 {50, 50};
     my_sprite.Width = 100;
     my_sprite.Height = 100;
-    my_sprite.Scale = 0.4f;
-    my_sprite.Bitmap = sprite_bitmap;
+    my_sprite.Scale = 1.4f;
+    my_sprite.Bitmap = GetAsset(1);
 }
 
 void UpdateBuffer(ScreenBuffer* ScreenBuffer, int MouseX, int MouseY)

@@ -27,3 +27,4 @@ src\Engine\OpenBitmap.cpp
 src\Standard\Util.cpp
 src\Engine\Rendering.cpp
 src\Standard\Vector.cpp
+src\Engine\AssetManager.cpp
