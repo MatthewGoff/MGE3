@@ -13,10 +13,62 @@ int SampleBitmap(float x, float y, Bitmap* bitmap)
 
 int BlendPixel(int x, int y, Sprite* sprite)
 {
-    int local_x = x - sprite->Position.X;
-    int local_y = y - sprite->Position.Y;
+    float local_x = x - sprite->Position.X;
+    float local_y = y - sprite->Position.Y;
     
-    return SampleBitmap((float)local_x, (float)local_y, sprite->Bitmap);
+    int sample1 = SampleBitmap(
+        local_x + 0.25f,
+        local_y + 0.25f,
+        sprite->Bitmap);
+    int sample2 = SampleBitmap(
+        local_x + 0.25f,
+        local_y + 0.75f,
+        sprite->Bitmap);
+    int sample3 = SampleBitmap(
+        local_x + 0.75f,
+        local_y + 0.25f,
+        sprite->Bitmap);
+    int sample4 = SampleBitmap(
+        local_x + 0.75f,
+        local_y + 0.75f,
+        sprite->Bitmap);
+
+    int64 test = 0x00FF0000;
+    test += 0x00FF0000;
+    test += 0x00FF0000;
+    test += 0x00FF0000;
+    int64 test2 = test / 4;
+    int64 test3 = test >> 2;
+
+    int64 a = (sample1 & 0xFF000000)
+            + (sample2 & 0xFF000000)
+            + (sample3 & 0xFF000000)
+            + (sample4 & 0xFF000000);
+    a /= 4;
+    a &= 0xFF000000;
+    
+    int64 r = (sample1 & 0x00FF0000)
+            + (sample2 & 0x00FF0000)
+            + (sample3 & 0x00FF0000)
+            + (sample4 & 0x00FF0000);
+    r /= 4;
+    r &= 0x00FF0000;
+
+    int64 g = (sample1 & 0x0000FF00)
+            + (sample2 & 0x0000FF00)
+            + (sample3 & 0x0000FF00)
+            + (sample4 & 0x0000FF00);
+    g /= 4;
+    g &= 0x0000FF00;
+
+    int64 b = (sample1 & 0x000000FF)
+            + (sample2 & 0x000000FF)
+            + (sample3 & 0x000000FF)
+            + (sample4 & 0x000000FF);
+    b /= 4;
+    b &= 0x000000FF;
+    
+    return a | r | g | b;
 }
 
 void Engine::Paste(Bitmap* destination, Sprite* sprite)
