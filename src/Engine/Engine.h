@@ -3,6 +3,7 @@
 
 #include "Engine/struct/Bitmap.h"
 #include "Engine/struct/Sprite.h"
+#include "Engine/struct/Glyph.h"
 
 namespace Engine
 {
@@ -19,6 +20,7 @@ namespace Engine
     // AssetManager.cpp
     void LoadAsset(int id);
     Bitmap* GetAsset(int id);
+    void PasteGlyph(Bitmap* destination, Glyph* glyph);
 }
 
 #endif
