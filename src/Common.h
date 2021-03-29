@@ -46,7 +46,4 @@ struct Couple
     int Y;
 };
 
-#include <math.h>
-#include "Print.h"
-
 #endif

@@ -8,17 +8,18 @@ mkdir build\bin
 
 set build_output= -Febuild\bin\main.exe -Fobuild\bin\ -Fdbuild\bin\
 
-:: create debug information (for vs)
+:: -Zi => debug information (for VS)
 set build_flags= -Zi
 
 set build_search= -I src\ -I src\Engine -I src\WP -I src\Engine\struct
 
-:: set build_libs=" user32.lib gdi32.lib winmm.lib"
-
 :: Libraries to include
 set build_libs=
+:: user32.lib provides multiple OS services from <window.h>
 set build_libs=%build_libs% user32.lib
+:: gdi32.lib provides StretchDIBits() from <windows.h>
 set build_libs=%build_libs% gdi32.lib
+:: winmm.lib provides timeBeginPeriod() from <windows.h>
 set build_libs=%build_libs% winmm.lib
 
 :: Header files to include everywhere
@@ -29,6 +30,7 @@ set build_include=%build_include% -FIMemory.h
 set build_include=%build_include% -FIStandard\Standard.h
 set build_include=%build_include% -FImalloc.h
 set build_include=%build_include% -FImath.h
+set build_include=%build_include% -FIPrint.h
 
 :: source files to be compiled
 set build_source=
