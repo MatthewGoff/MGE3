@@ -1,5 +1,5 @@
 #include "Engine.h"
-#include "PlatformAPI.h"
+#include "WP\WP.h"
 
 /*
 Takes the location of a (.bmp) file loaded into memory and creates a re-formatted copy at the output location.

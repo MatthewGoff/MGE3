@@ -11,7 +11,7 @@ set build_output= -Febuild\bin\main.exe -Fobuild\bin\ -Fdbuild\bin\
 :: -Zi => debug information (for VS)
 set build_flags= -Zi
 
-set build_search= -I src\ -I src\Engine -I src\WP -I src\Engine\struct
+set build_search= -I src\
 
 :: Libraries to include
 set build_libs=
@@ -30,7 +30,7 @@ set build_include=%build_include% -FIMemory.h
 set build_include=%build_include% -FIStandard\Standard.h
 set build_include=%build_include% -FImalloc.h
 set build_include=%build_include% -FImath.h
-set build_include=%build_include% -FIPrint.h
+set build_include=%build_include% -FIWP\Print.h
 
 :: source files to be compiled
 set build_source=

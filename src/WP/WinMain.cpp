@@ -1,6 +1,6 @@
 #include <windows.h>
 #include "Clock.h"
-#include "Engine.h"
+#include "Engine\Engine.h"
 
 /* This file (and print and clock) contain all and only the code to abstract
  * the Windows operating system. To the best of my knowledge it is conventional

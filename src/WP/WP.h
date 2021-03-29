@@ -1,5 +1,5 @@
-#ifndef PLATFORMAPI_H
-#define PLATFORMAPI_H
+#ifndef WP_H
+#define WP_H
 
 namespace WP
 {
