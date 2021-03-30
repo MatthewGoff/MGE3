@@ -4,13 +4,9 @@ static Bitmap* asset_location[10]; // Maximum 10 assets
 
 void Engine::LoadAsset(int id)
 {
-    char path[6];
-    path[0] = id + 48;
-    path[1] = '.';
-    path[2] = 'b';
-    path[3] = 'm';
-    path[4] = 'p';
-    path[5] = 0;
+    char path[128];
+    Util::MoveString(path, "Assets\\x.bmp");
+    path[7] = id + 48;
     
     Bitmap* bitmap = (Bitmap*)malloc(10 * MEGABYTES);
     

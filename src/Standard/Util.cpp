@@ -43,4 +43,6 @@ void Util::MoveString(char* to, char* from)
         to++;
         from++;
     }
+    
+    *to = 0;
 }

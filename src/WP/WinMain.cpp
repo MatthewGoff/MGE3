@@ -330,16 +330,15 @@ namespace WP // "Windows Platform"
             "my_data.txt");
         
         Print("bytes_read = %d\n", (int64)bytes_read);
-        //Print((char*)FileBuffer);
         
         uint64 file_size;
-        GetFileSize("my_data.txt", &file_size);
+        GetFileSize("AppData\\my_data.txt", &file_size);
         Print("\nFilesize = %d\n", (int64)file_size);
         
         char msg[] = "someone wants to know";
         byte* pointer = (byte*)&msg[0];
         
-        bool success = WriteEntireFile(pointer, sizeof(msg)/sizeof(msg[0]), "new_output.txt");
+        bool success = WriteEntireFile(pointer, sizeof(msg)/sizeof(msg[0]), "AppData\\new_output.txt");
     }
     
     RootMemory* InitializeMemory()

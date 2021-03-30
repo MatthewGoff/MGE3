@@ -1,6 +1,7 @@
 
 
-build/
+build/*
+!build/Assets/
 # Matt uses /notes/ to store scratchwork, etc.
 notes/
 
