@@ -46,7 +46,7 @@ namespace Engine
         return *address;
     }
 
-    int BlendPixel(int x, int y, Sprite* sprite)
+    int Multisample(int x, int y, Sprite* sprite)
     {
         Vector::float2 global = Vector::float2 {(float)x, (float)y};
         Vector::float2 local = Vector::Sub(global, sprite->Position);
@@ -88,7 +88,7 @@ namespace Engine
         {
             for (int x = low_x; x < high_x; x++)
             {
-                int color = BlendPixel(x, y, sprite);
+                int color = Multisample(x, y, sprite);
                 int* address = destination->Pixels + (destination->Width * y) + (x);
                 *address = color;
             }
@@ -98,22 +98,27 @@ namespace Engine
     /*
     Takes global location x & y. Also takes a sprite with a position.
     */
-    int MultisampleGlyph(int x, int y, Glyph* glyph)
+    int MultisampleGlyph(
+        int x,
+        int y,
+        Vector::float2 position,
+        float scale,
+        char glyph)
     {
         Vector::float2 global = Vector::float2 {(float)x, (float)y};
-        Vector::float2 local = Vector::Sub(global, glyph->Position);
+        Vector::float2 local = Vector::Sub(global, position);
         
         Vector::float2 p1 = Vector::Add(local, 0.25f, 0.25f);
         Vector::float2 p2 = Vector::Add(local, 0.25f, 0.75f);
         Vector::float2 p3 = Vector::Add(local, 0.75f, 0.25f);
         Vector::float2 p4 = Vector::Add(local, 0.75f, 0.75f);
         
-        p1 = Vector::Div(p1, glyph->Scale);
-        p2 = Vector::Div(p2, glyph->Scale);
-        p3 = Vector::Div(p3, glyph->Scale);
-        p4 = Vector::Div(p4, glyph->Scale);
+        p1 = Vector::Div(p1, scale);
+        p2 = Vector::Div(p2, scale);
+        p3 = Vector::Div(p3, scale);
+        p4 = Vector::Div(p4, scale);
         
-        int vertical_offset = 120 * (glyph->ascii - 32);
+        int vertical_offset = 120 * (glyph - 32);
         
         p1 = Vector::Add(p1, 0, vertical_offset);
         p2 = Vector::Add(p2, 0, vertical_offset);
@@ -129,16 +134,20 @@ namespace Engine
         return AverageColors(sample1, sample2, sample3, sample4);
     }
 
-    void PasteGlyph(Bitmap* destination, Glyph* glyph)
+    void PasteGlyph(
+        Bitmap* destination,
+        Vector::float2 position,
+        float scale,
+        char glyph)
     {
-        int low_y = (int)glyph->Position.y;
-        int low_x = (int)glyph->Position.x;
+        int low_y = (int)position.y;
+        int low_x = (int)position.x;
         
         low_y = Util::Max(low_y, 0);
         low_x = Util::Max(low_x, 0);
         
-        int high_y = (int)glyph->Position.y + 120 * glyph->Scale;
-        int high_x = (int)glyph->Position.x + 44 * glyph->Scale;
+        int high_y = (int)position.y + 120 * scale;
+        int high_x = (int)position.x + 44 * scale;
         
         high_y = Util::Min(high_y, destination->Height);
         high_x = Util::Min(high_x, destination->Width);
@@ -147,10 +156,26 @@ namespace Engine
         {
             for (int x = low_x; x < high_x; x++)
             {
-                int color = MultisampleGlyph(x, y, glyph);
+                int color = MultisampleGlyph(x, y, position, scale, glyph);
                 int* address = destination->Pixels + (destination->Width * y) + (x);
                 *address = color;
             }
+        }
+    }
+
+    void PasteText(Bitmap* destination, TextSprite* text)
+    {
+        int ordinal_position = 0;
+        
+        char* runner = (char*)&text->Glyphs;
+        while (*runner != 0)
+        {
+            Vector::float2 position = Vector::Add(text->Position, 44 * ordinal_position, 0);
+            
+            PasteGlyph(destination, position, text->Scale, *runner);
+            
+            ordinal_position++;
+            runner++;
         }
     }
 

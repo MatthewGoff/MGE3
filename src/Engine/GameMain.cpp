@@ -3,7 +3,7 @@
 int animation_offset;
 Sprite smile_sprite;
 Sprite ascii_sprite;
-Glyph symbol;
+TextSprite my_text;
 
 void Engine::InitializeGame(RootMemory* RootMemory)
 {
@@ -26,10 +26,10 @@ void Engine::InitializeGame(RootMemory* RootMemory)
     ascii_sprite.Width = ascii_sprite.Bitmap->Width;
     ascii_sprite.Height = ascii_sprite.Bitmap->Height;
     
-    symbol = {};
-    symbol.Position = Vector::float2 {200, 50};
-    symbol.Scale = 1;
-    symbol.ascii = '&';
+    my_text = {};
+    my_text.Position = Vector::float2 {200, 50};
+    my_text.Scale = 1;    
+    Util::MoveString(my_text.Glyphs, "Hello Ryan!");
 }
 
 void ClearBuffer(ScreenBuffer* ScreenBuffer)
@@ -67,5 +67,5 @@ void Engine::GameMain(ScreenBuffer* ScreenBuffer, ControlInput* ControlInput, ui
     
     Engine::Paste((Bitmap*)ScreenBuffer, &smile_sprite);
     Engine::Paste((Bitmap*)ScreenBuffer, &ascii_sprite);
-    Engine::PasteGlyph((Bitmap*)ScreenBuffer, &symbol);
+    Engine::PasteText((Bitmap*)ScreenBuffer, &my_text);
 }

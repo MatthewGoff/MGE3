@@ -34,3 +34,13 @@ int Util::Max(int a, int b)
         return b;
     }
 }
+
+void Util::MoveString(char* to, char* from)
+{
+    while (*from != 0)
+    {
+        *to = *from;
+        to++;
+        from++;
+    }
+}

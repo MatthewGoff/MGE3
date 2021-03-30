@@ -4,6 +4,7 @@
 #include "Engine/struct/Bitmap.h"
 #include "Engine/struct/Sprite.h"
 #include "Engine/struct/Glyph.h"
+#include "Engine/struct/TextSprite.h"
 
 namespace Engine
 {
@@ -16,11 +17,16 @@ namespace Engine
     
     // Rendering.cpp
     void Paste(Bitmap* destination, Sprite* sprite);
+    void PasteGlyph(
+        Bitmap* destination,
+        Vector::float2 position,
+        float scale,
+        char glyph);
+    void PasteText(Bitmap* destination, TextSprite* text);
     
     // AssetManager.cpp
     void LoadAsset(int id);
     Bitmap* GetAsset(int id);
-    void PasteGlyph(Bitmap* destination, Glyph* glyph);
 }
 
 #endif
