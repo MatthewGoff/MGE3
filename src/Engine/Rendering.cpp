@@ -4,10 +4,10 @@ namespace Engine
 {
     int AverageColors(int c1, int c2, int c3, int c4)
     {
-        int64 a = (c1 & 0xFF000000)
-                + (c2 & 0xFF000000)
-                + (c3 & 0xFF000000)
-                + (c4 & 0xFF000000);
+        uint64 a = (uint64)(c1 & 0xFF000000)
+                 + (uint64)(c2 & 0xFF000000)
+                 + (uint64)(c3 & 0xFF000000)
+                 + (uint64)(c4 & 0xFF000000);
         a /= 4;
         a &= 0xFF000000;
         
@@ -33,6 +33,22 @@ namespace Engine
         b &= 0x000000FF;
         
         return a | r | g | b;
+    }
+    
+    int AlphaComposite(int base, int addition)
+    {        
+        float a = (float)(addition & 0xFF000000) / 0xFF000000;
+        
+        float _r = a * (addition & 0x00FF0000) + (1 - a) * (base & 0x00FF0000);
+        int r = ((int)_r) & 0x00FF0000;
+        
+        float _g = a * (addition & 0x0000FF00) + (1 - a) * (base & 0x0000FF00);
+        int g = ((int)_g) & 0x0000FF00;
+        
+        float _b = a * (addition & 0x000000FF) + (1 - a) * (base & 0x000000FF);
+        int b = ((int)_b) & 0x000000FF;
+        
+        return 0xFF000000 | r | g | b;
     }
 
     int SampleBitmap(Vector::float2 point, Bitmap* bitmap)
@@ -88,8 +104,10 @@ namespace Engine
         {
             for (int x = low_x; x < high_x; x++)
             {
-                int color = Multisample(x, y, sprite);
                 int* address = destination->Pixels + (destination->Width * y) + (x);
+                
+                int color = Multisample(x, y, sprite);
+                color = AlphaComposite(*address, color);
                 *address = color;
             }
         }
@@ -156,8 +174,9 @@ namespace Engine
         {
             for (int x = low_x; x < high_x; x++)
             {
-                int color = MultisampleGlyph(x, y, position, scale, glyph);
                 int* address = destination->Pixels + (destination->Width * y) + (x);
+                int color = MultisampleGlyph(x, y, position, scale, glyph);
+                color = AlphaComposite(*address, color);
                 *address = color;
             }
         }
@@ -177,10 +196,5 @@ namespace Engine
             ordinal_position++;
             runner++;
         }
-    }
-
-    void PasteAlpha()
-    {
-        
     }
 }

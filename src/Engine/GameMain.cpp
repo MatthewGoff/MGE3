@@ -8,7 +8,7 @@ TextSprite my_text;
 void Engine::InitializeGame(RootMemory* RootMemory)
 {
     animation_offset = 0;
-    
+
     LoadAsset(0);
     LoadAsset(1);
     
@@ -25,7 +25,7 @@ void Engine::InitializeGame(RootMemory* RootMemory)
     ascii_sprite.Bitmap = GetAsset(0);
     ascii_sprite.Width = ascii_sprite.Bitmap->Width;
     ascii_sprite.Height = ascii_sprite.Bitmap->Height;
-    
+        
     my_text = {};
     my_text.Position = Vector::float2 {200, 50};
     my_text.Scale = 1;    
@@ -41,7 +41,7 @@ void ClearBuffer(ScreenBuffer* ScreenBuffer)
             int index = (y * ScreenBuffer->Width) + x;
             unsigned int* pixel_address = (unsigned int*)ScreenBuffer->Pixels + index;
             
-            int color = 0x00000000;
+            int color = 0x00444444;
             
             *pixel_address = color;
         }
@@ -51,14 +51,6 @@ void ClearBuffer(ScreenBuffer* ScreenBuffer)
 void Engine::GameMain(ScreenBuffer* ScreenBuffer, ControlInput* ControlInput, uint32 milliseconds_passed)
 {
     animation_offset++;
-    //UpdateBuffer(ScreenBuffer, ControlInput->MouseX, ControlInput->MouseY);
-    
-    /*
-    algo:
-    1) clear buffer
-    2) for sprite in sprites
-        3) paste sprite
-    */
     
     smile_sprite.Position.x += 2;
     smile_sprite.Position.y += 1;

@@ -14,7 +14,7 @@ void Engine::LoadAsset(int id)
     bool success = Engine::OpenBitmap(mem, 10 * MEGABYTES, bitmap, 10 * MEGABYTES, path);
     free(mem);
     
-    if (success == 0)
+    if (!success)
     {
         return;
     }
