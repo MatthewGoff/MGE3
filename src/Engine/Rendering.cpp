@@ -156,6 +156,7 @@ namespace Engine
         Bitmap* destination,
         Vector::float2 position,
         float scale,
+        int color,
         char glyph)
     {
         int low_y = (int)position.y;
@@ -175,9 +176,11 @@ namespace Engine
             for (int x = low_x; x < high_x; x++)
             {
                 int* address = destination->Pixels + (destination->Width * y) + (x);
-                int color = MultisampleGlyph(x, y, position, scale, glyph);
-                color = AlphaComposite(*address, color);
-                *address = color;
+                
+                int sample = MultisampleGlyph(x, y, position, scale, glyph);
+                sample = (sample & 0xFF000000) | (color & 0x00FFFFFF);
+                sample = AlphaComposite(*address, sample);
+                *address = sample;
             }
         }
     }
@@ -191,7 +194,7 @@ namespace Engine
         {
             Vector::float2 position = Vector::Add(text->Position, 44 * ordinal_position, 0);
             
-            PasteGlyph(destination, position, text->Scale, *runner);
+            PasteGlyph(destination, position, text->Scale, text->Color, *runner);
             
             ordinal_position++;
             runner++;

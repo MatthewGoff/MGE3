@@ -17,11 +17,6 @@ namespace Engine
     
     // Rendering.cpp
     void Paste(Bitmap* destination, Sprite* sprite);
-    void PasteGlyph(
-        Bitmap* destination,
-        Vector::float2 position,
-        float scale,
-        char glyph);
     void PasteText(Bitmap* destination, TextSprite* text);
     
     // AssetManager.cpp

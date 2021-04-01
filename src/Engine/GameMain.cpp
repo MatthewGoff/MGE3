@@ -28,7 +28,8 @@ void Engine::InitializeGame(RootMemory* RootMemory)
         
     my_text = {};
     my_text.Position = Vector::float2 {200, 50};
-    my_text.Scale = 1;    
+    my_text.Scale = 1;
+    my_text.Color = 0xFF44CCCC;
     Util::MoveString(my_text.Glyphs, "Hello Ryan!");
 }
 
@@ -41,7 +42,7 @@ void ClearBuffer(ScreenBuffer* ScreenBuffer)
             int index = (y * ScreenBuffer->Width) + x;
             unsigned int* pixel_address = (unsigned int*)ScreenBuffer->Pixels + index;
             
-            int color = 0x00444444;
+            int color = 0x00222222;
             
             *pixel_address = color;
         }
