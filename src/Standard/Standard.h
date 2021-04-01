@@ -32,4 +32,10 @@ namespace Util
     void MoveString(char* to, char* from);
 }
 
+namespace String
+{
+    char* ToString(char* buffer, int val);
+    char* ToString(float val);
+}
+
 #endif

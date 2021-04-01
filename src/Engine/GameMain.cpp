@@ -30,7 +30,10 @@ void Engine::InitializeGame(RootMemory* RootMemory)
     my_text.Position = Vector::float2 {200, 50};
     my_text.Scale = 1;
     my_text.Color = 0xFF44CCCC;
-    Util::MoveString(my_text.Glyphs, "Hello Ryan!");
+    
+    char buffer[32];
+    char* pointer = String::ToString(buffer, -500200100);
+    Util::MoveString(my_text.Glyphs, pointer);
 }
 
 void ClearBuffer(ScreenBuffer* ScreenBuffer)
