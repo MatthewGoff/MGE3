@@ -469,11 +469,20 @@ namespace WP // "Windows Platform"
             ProcessMessages();
             ProcessMouse(window_handle, &RootMemory->ControlInput);
             
+<<<<<<< HEAD
             RootMemory->DebugInfo.FrameRate = (int) (1000000.0 / frame_time);
             RootMemory->DebugInfo.WorkLoad = work_load;
             RootMemory->DebugInfo.Time = loop_time_stamp / 1000000.0;
             RootMemory->DebugInfo.CursorPosition = RootMemory->ControlInput.CursorPosition;
             
+=======
+            /*
+            &RootMemory->DebugInfo.FrameRate = (int) (1000000.0 / frame_time);
+            &RootMemory->DebugInfo.WorkLoad = work_load;
+            &RootMemory->DebugInfo.Time = loop_time_stamp / 1000000.0;
+            &RootMemory->DebugInfo.CursorPosition = RootMemory->ControlInput.CursorPosition;
+            */
+>>>>>>> 455b06a7b8c40540317e7c3e8199098dc1e7ae93
             Engine::GameMain(&RootMemory->ScreenBuffer, &RootMemory->ControlInput, &RootMemory->DebugInfo);
 
             int sleep_duration;
