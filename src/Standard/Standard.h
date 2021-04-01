@@ -8,6 +8,12 @@ namespace Vector
         float x;
         float y;
     };
+    
+    struct int2
+    {
+        int x;
+        int y;
+    };
 
     // Vector.cpp
     float2 Add(float2 oprnd1, float2 oprnd2);

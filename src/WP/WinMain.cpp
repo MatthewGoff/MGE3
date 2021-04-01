@@ -29,18 +29,15 @@ namespace WP // "Windows Platform"
             MB_OK|MB_ICONINFORMATION);
     }
 
-    /*
-     * Returns width in Couple.X and height in Couple.Y
-     */
-    Couple GetWindowDimensions(HWND window_handle)
+    Vector::int2 GetWindowDimensions(HWND window_handle)
     {
-        Couple result;
+        Vector::int2 result;
         
         HDC device_context = GetDC(window_handle);
         RECT client_rect;
         GetClientRect(window_handle, &client_rect);
-        result.X = client_rect.right - client_rect.left;
-        result.Y = client_rect.bottom - client_rect.top;
+        result.x = client_rect.right - client_rect.left;
+        result.y = client_rect.bottom - client_rect.top;
         
         return result;
     }
@@ -62,11 +59,11 @@ namespace WP // "Windows Platform"
     void RefreshScreen(HWND window_handle, ScreenBuffer* ScreenBuffer)
     {
         HDC device_context = GetDC(window_handle);
-        Couple window_dimensions = GetWindowDimensions(window_handle);
+        Vector::int2 window_dimensions = GetWindowDimensions(window_handle);
         StretchDIBits(
             device_context,
             0, 0, ScreenBuffer->Width, ScreenBuffer->Height,
-            0, 0, window_dimensions.X, window_dimensions.Y,
+            0, 0, window_dimensions.x, window_dimensions.y,
             &ScreenBuffer->Pixels,
             &BitmapInfo,
             DIB_RGB_COLORS,
@@ -90,9 +87,9 @@ namespace WP // "Windows Platform"
             case WM_SIZE:
             {
                 //sent when windows is resized.
-                Couple window_dimensions = GetWindowDimensions(hwnd);
-                int width = window_dimensions.X;
-                int height = window_dimensions.Y;
+                Vector::int2 window_dimensions = GetWindowDimensions(hwnd);
+                int width = window_dimensions.x;
+                int height = window_dimensions.y;
                 //PopulateBitmapInfo(width, height);
             } break;
             #endif
@@ -315,8 +312,7 @@ namespace WP // "Windows Platform"
         GetCursorPos(&position);
         
         ScreenToClient(window_handle, &position);
-        ControlInput->MouseX = position.x;
-        ControlInput->MouseY = position.y;
+        ControlInput->CursorPosition = Vector::int2 {position.x, position.y};
         //Print("position = (%d, ", position.x);
         //Print("%d)\n", position.y);
     }
@@ -431,9 +427,9 @@ namespace WP // "Windows Platform"
             return 0;
         }
         
-        Couple window_dimensions = GetWindowDimensions(window_handle);
-        int width = window_dimensions.X;
-        int height = window_dimensions.Y;
+        Vector::int2 window_dimensions = GetWindowDimensions(window_handle);
+        int width = window_dimensions.x;
+        int height = window_dimensions.y;
         RootMemory->ScreenBuffer.Width = width;
         RootMemory->ScreenBuffer.Height = height;
         PopulateBitmapInfo(width, height);
@@ -464,6 +460,8 @@ namespace WP // "Windows Platform"
         
         // Start loop
         int loop_time_stamp = Clock::GetTimeMicro();
+        int frame_time = 1; // 0 will cause a divid by zero error on first frame
+        float work_load = 0;
         
         running = true;
         while (running)
@@ -471,24 +469,28 @@ namespace WP // "Windows Platform"
             ProcessMessages();
             ProcessMouse(window_handle, &RootMemory->ControlInput);
             
-            Engine::GameMain(&RootMemory->ScreenBuffer, &RootMemory->ControlInput, 32);
+            RootMemory->DebugInfo.FrameRate = (int) (1000000.0 / frame_time);
+            RootMemory->DebugInfo.WorkLoad = work_load;
+            RootMemory->DebugInfo.Time = loop_time_stamp / 1000000.0;
+            RootMemory->DebugInfo.CursorPosition = RootMemory->ControlInput.CursorPosition;
+            
+            Engine::GameMain(&RootMemory->ScreenBuffer, &RootMemory->ControlInput, &RootMemory->DebugInfo);
 
             int sleep_duration;
-            int time_elapsed;
             
             // Not sure if it's neccesary to check sleep more than once.
             {
-                time_elapsed = Clock::GetTimeMicro() - loop_time_stamp;
-                sleep_duration = target_frametime - time_elapsed;
+                frame_time = Clock::GetTimeMicro() - loop_time_stamp;
+                sleep_duration = target_frametime - frame_time;
                 if (sleep_duration > 0)
                 {
                     Sleep(sleep_duration / 1000);
                 }
-                float sleep_percent = (float)sleep_duration / (float)target_frametime;
-                //Print("Sleep percent = %f\n", sleep_percent);
+                work_load = (target_frametime - sleep_duration) /  target_frametime;
+                //Print("work_load = %f\n", work_load);
             }
             //while (sleep_duration > 0);
-            //Print("Time elapsed = %u\n", time_elapsed);
+            //Print("Time elapsed = %u\n", frame_time);
             loop_time_stamp = Clock::GetTimeMicro();
             
             RefreshScreen(window_handle, &RootMemory->ScreenBuffer);

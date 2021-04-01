@@ -10,8 +10,7 @@ struct ScreenBuffer
 
 struct ControlInput
 {
-    int MouseX;
-    int MouseY;
+    Vector::int2 CursorPosition;
 };
 
 struct FileBuffer
@@ -20,10 +19,19 @@ struct FileBuffer
     int Size = 10 * MEGABYTES;
 };
 
+struct DebugInfo
+{
+    int FrameRate;
+    float WorkLoad;
+    float Time;
+    Vector::int2 CursorPosition;
+};
+
 struct RootMemory
 {
     ScreenBuffer ScreenBuffer;
     ControlInput ControlInput;
+    DebugInfo DebugInfo;
     FileBuffer FileBuffer;
 };
 

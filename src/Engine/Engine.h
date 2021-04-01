@@ -10,7 +10,7 @@ namespace Engine
 {
     // GameMain.cpp
     void InitializeGame(RootMemory* main_memory);
-    void GameMain(ScreenBuffer* ScreenBuffer, ControlInput* ControlInput, uint32 milliseconds_passed);
+    void GameMain(ScreenBuffer* ScreenBuffer, ControlInput* ControlInput, DebugInfo* DebugInfo);
     
     // OpenBitmap.cpp
     bool OpenBitmap(byte* mem, int mem_size, Bitmap* destination, int dest_size, char* path);
