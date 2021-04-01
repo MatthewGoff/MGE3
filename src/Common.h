@@ -39,11 +39,4 @@ typedef unsigned char byte;
 
 #define Assert(expression) if(!(expression)) {*(int * )0 = 0;}
 
-// Generic couple of integers for bundling return values
-struct Couple
-{
-    int X;
-    int Y;
-};
-
 #endif
