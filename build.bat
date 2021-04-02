@@ -12,6 +12,8 @@ set build_output= -Febuild\bin\main.exe -Fobuild\bin\ -Fdbuild\bin\
 set build_flags= -Zi
 
 set build_search= -I src\
+set build_search=%build_search% -I C:\GLM\glm\
+set build_search=%build_search% -I C:\VulkanSDK\1.2.162.1\Include\vulkan
 
 :: Libraries to include
 set build_libs=
@@ -21,6 +23,9 @@ set build_libs=%build_libs% user32.lib
 set build_libs=%build_libs% gdi32.lib
 :: winmm.lib provides timeBeginPeriod() from <windows.h>
 set build_libs=%build_libs% winmm.lib
+set build_libs=%build_libs% C:\VulkanSDK\1.2.162.1\Lib\vulkan-1.lib
+
+
 
 :: Header files to include everywhere
 set build_include=

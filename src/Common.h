@@ -30,7 +30,9 @@ typedef int int32;
 typedef uint uint32;
 typedef unsigned char byte;
 
-#define UINT32_MAX (0xFFFFFFFF)
+#ifndef UINT32_MAX
+//#define UINT32_MAX (0xFFFFFFFF)
+#endif
 
 #define BITSPERBYTE (8)
 #define KILOBYTES (1024)
