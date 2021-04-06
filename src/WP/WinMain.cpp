@@ -1,19 +1,7 @@
-//#define GLM_FORCE_RADIANS
-//#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-//#include <vec4.hpp>
-//#include <mat4x4.hpp>
-
-#include <vulkan.h>
-
-#include <iostream>
-#include <stdexcept>
-#include <cstdlib>
-
-// ^ tutorial
-
 #include <windows.h>
 #include "Clock.h"
 #include "Engine\Engine.h"
+#include "Render.h"
 
 /* This file (and print and clock) contain all and only the code to abstract
  * the Windows operating system. To the best of my knowledge it is conventional
@@ -25,8 +13,6 @@ namespace WP // "Windows Platform"
     static BITMAPINFO BitmapInfo;
     static bool running;
     static int InitialTime; // Milliseconds; 32 bit value good for 277 hours.
-    
-    static VkInstance vk_instance;
 
     /* We are looking for 4 gigabytes of memory. VirtualAlloc() will only take
      * a 32 bit value. 4 * 1024^3 happens to be the first number to overflow a
@@ -331,60 +317,6 @@ namespace WP // "Windows Platform"
         //Print("position = (%d, ", position.x);
         //Print("%d)\n", position.y);
     }
-    
-    #if 0
-    void VKDemo()
-    {
-        uint32 extensionCount = 0;
-        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount,
-        nullptr);
-        
-        Print("%d extensions supported\n", (int64)extensionCount);
-        
-        glm::mat4 matrix;
-        glm::vec4 vec;
-        auto test = matrix * vec;
-    }
-    #endif
-    
-    void createInstance()
-    {
-        VkApplicationInfo appInfo{};
-        appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        appInfo.pApplicationName = "Hello Triangle";
-        appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.pEngineName = "No Engine";
-        appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.apiVersion = VK_API_VERSION_1_0;
-        
-        VkInstanceCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        createInfo.pApplicationInfo = &appInfo;
-        createInfo.enabledLayerCount = 0;
-        createInfo.enabledLayerCount = 1;
-        createInfo.ppEnabledLayerNames = "VK_LAYER_KHRONOS_validation";
-
-        VkResult result = vkCreateInstance(&createInfo, nullptr, &vk_instance);
-        
-        if (result != VK_SUCCESS)
-        {
-            Print("Failed to create VK instance");
-        }
-    }
-
-    void initVulkan()
-    {
-    
-        createInstance();
-
-        "VK_LAYER_KHRONOS_validation"
-
-    }
-
-    void cleanup()
-    {
-        vkDestroyInstance(vk_instance, nullptr);
-    }
 
     // Runs once after initialization and before the main loop
     void Fluff(RootMemory* RootMemory)
@@ -523,11 +455,12 @@ namespace WP // "Windows Platform"
         
         Engine::InitializeGame(RootMemory);
         
+        initVulkan(hInstance, window_handle);
+        
         // End initialization
 
         //Fluff(RootMemory);
-        initVulkan();
-        
+
         // Start loop
         int loop_time_stamp = Clock::GetTimeMicro();
         int frame_time = 1; // 0 will cause a divid by zero error on first frame

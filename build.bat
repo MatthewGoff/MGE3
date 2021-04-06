@@ -49,6 +49,7 @@ set build_source=%build_source% src\Engine\Rendering.cpp
 set build_source=%build_source% src\Standard\Vector.cpp
 set build_source=%build_source% src\Engine\AssetManager.cpp
 set build_source=%build_source% src\Standard\String.cpp
+set build_source=%build_source% src\WP\Render.cpp
 
 :: cl @command_file.txt
 cl%build_output%%gme_flags%%build_search%%build_libs%%build_include%%build_source%
