@@ -1,19 +1,20 @@
 @echo off
 
 if not exist build mkdir build
-if not exist build\data mkdir build\data
 
 if exist build\bin rmdir /s /q build\bin
 mkdir build\bin
+
+if not exist build\AppData mkdir build\AppData
 
 set build_output= -Febuild\bin\main.exe -Fobuild\bin\ -Fdbuild\bin\
 
 :: -Zi => debug information (for VS)
 set build_flags= -Zi
 
-set build_search= -I src\
-set build_search=%build_search% -I C:\GLM\glm\
-set build_search=%build_search% -I C:\VulkanSDK\1.2.162.1\Include\vulkan
+set build_sdk_include= -I src\
+set build_sdk_include=%build_sdk_include% -I C:\GLM\glm\
+set build_sdk_include=%build_sdk_include% -I C:\VulkanSDK\1.2.162.1\Include\vulkan
 
 :: Libraries to include
 set build_libs=
@@ -24,8 +25,6 @@ set build_libs=%build_libs% gdi32.lib
 :: winmm.lib provides timeBeginPeriod() from <windows.h>
 set build_libs=%build_libs% winmm.lib
 set build_libs=%build_libs% C:\VulkanSDK\1.2.162.1\Lib\vulkan-1.lib
-
-
 
 :: Header files to include everywhere
 set build_include=
@@ -52,4 +51,4 @@ set build_source=%build_source% src\Standard\String.cpp
 set build_source=%build_source% src\WP\Render.cpp
 
 :: cl @command_file.txt
-cl%build_output%%gme_flags%%build_search%%build_libs%%build_include%%build_source%
+cl%build_output%%build_flags%%build_include%%build_libs%%build_sdk_include%%build_source%
