@@ -37,6 +37,10 @@ typedef unsigned char byte;
 #define MEGABYTES (1024 * KILOBYTES)
 #define GIGABYTES (1024 * MEGABYTES)
 
+#if 1
 #define Assert(expression) if(!(expression)) {*(int * )0 = 0;}
+#else
+#define Assert(expression)
+#endif
 
 #endif
