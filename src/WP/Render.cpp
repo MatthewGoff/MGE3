@@ -11,6 +11,15 @@ struct
     int PresentIndex;
 } QueueFamilies;
 
+struct
+{
+    VkSurfaceCapabilitiesKHR Capabilities;
+    int FormatsCount;
+    VkSurfaceFormatKHR Formats[20];
+    int PresentModesCount;
+    VkPresentModeKHR PresentModes[20];
+} SwapChainSupport;
+
 VkInstance VulkanInstance;
 
 VkPhysicalDevice PhysicalDevice = VK_NULL_HANDLE;
@@ -20,15 +29,23 @@ VkQueue PresentQueue;
 VkSurfaceKHR TargetSurface;
 VkDebugUtilsMessengerEXT DebugMessenger;
 
+VkFormat SwapChainImageFormat;
+VkExtent2D SwapChainExtent;
+int SwapChainSize;
+VkImage SwapChainImages[20];
+VkImageView SwapChainImageViews[20];
+
 char* ValidationLayers[] = {"VK_LAYER_KHRONOS_validation"};
 int ValidationLayersCount = 1;
 
 char* Extensions[] = {
     "VK_KHR_surface",
     "VK_KHR_win32_surface",
-    "VK_EXT_debug_utils",
-    "VK_KHR_get_physical_device_properties2"};
-int ExtensionsCount = 4;
+    "VK_EXT_debug_utils"};
+int ExtensionsCount = 3;
+
+char* DeviceExtensions[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+int DeviceExtensionsCount = 1;
 
 VkResult CreateDebugUtilsMessengerEXT(
     VkInstance instance,
@@ -52,13 +69,113 @@ VkResult CreateDebugUtilsMessengerEXT(
     }
 }
 
-static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
+bool CreateImageViews()
+{
+    //swapChainImageViews.resize(swapChainImages.size());
+    for (int i = 0; i < SwapChainSize; i++)
+    {
+        VkImageViewCreateInfo createInfo = {};
+        createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        createInfo.image = *(SwapChainImages + i);
+        createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        createInfo.format = SwapChainImageFormat;
+        
+        createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        createInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+        createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        createInfo.subresourceRange.baseMipLevel = 0;
+        createInfo.subresourceRange.levelCount = 1;
+        createInfo.subresourceRange.baseArrayLayer = 0;
+        createInfo.subresourceRange.layerCount = 1;
+        
+        VkResult result = vkCreateImageView(
+            device,
+            &createInfo,
+            nullptr,
+            swapChainImageViews + i)
+        if (result != VK_SUCCESS)
+        {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+
+/*
+Return false if failed to complete or if swapchain support is inssuficient.
+*/
+bool DetermineSwapChainSupport(VkPhysicalDevice physical_device)
+{
+    SwapChainSupport = {};
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
+        physical_device,
+        TargetSurface,
+        &SwapChainSupport.Capabilities);
+
+    uint32 count;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(
+        physical_device,
+        TargetSurface,
+        &count,
+        nullptr);
+    
+    if (count == 0 || count > 20)
+    {
+        return false;
+    }
+    
+    vkGetPhysicalDeviceSurfaceFormatsKHR(
+        physical_device,
+        TargetSurface,
+        &count,
+        SwapChainSupport.Formats);
+    SwapChainSupport.FormatsCount = count;
+
+    count = 0;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(
+        physical_device,
+        TargetSurface,
+        &count,
+        nullptr);
+    
+    if (count == 0 || count > 20)
+    {
+        return false;
+    }
+
+    vkGetPhysicalDeviceSurfacePresentModesKHR(
+        physical_device,
+        TargetSurface,
+        &count,
+        SwapChainSupport.PresentModes);
+    SwapChainSupport.PresentModesCount = count;
+
+    /*
+    Check for swapchain being addequate: (or another function)
+    swapChainAdequate = !swapChainSupport.formats.empty() &&
+    !swapChainSupport.presentModes.empty();
+    */
+    
+    return true;
+}
+
+void CreateGraphicsPipeline()
+{
+
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
     void* pUserData)
 {
-
+    return false;
     Print("Validation layer message: ");
     Print((char*)pCallbackData->pMessage);
     Print("\n");
@@ -103,7 +220,142 @@ bool SetupDebugMessenger()
     return true;
 }
 
-bool CheckValidationLayerSupport()
+VkPresentModeKHR ChooseSwapPresentMode(
+    VkPresentModeKHR* available_present_modes,
+    int count)
+{
+    for (int i = 0; i < count; i++)
+    {
+        VkPresentModeKHR available_present_mode = *(available_present_modes + i);
+        if (available_present_mode == VK_PRESENT_MODE_MAILBOX_KHR)
+        {
+            return available_present_mode;
+        }
+    }
+    
+    return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+VkExtent2D ChooseSwapExtent(VkSurfaceCapabilitiesKHR* capabilities)
+{
+    if (capabilities->currentExtent.width != UINT32_MAX)
+    {
+        return capabilities->currentExtent;
+    }
+    else
+    {
+        VkExtent2D extent = {WINDOW_WIDTH, WINDOW_HEIGHT};
+        
+        extent.width = Util::Min(capabilities->maxImageExtent.width, extent.width);
+        extent.width = Util::Max(capabilities->minImageExtent.width,
+        extent.width);
+        
+        extent.height = Util::Min(capabilities->maxImageExtent.height,
+        extent.height);
+        extent.height = Util::Max(capabilities->minImageExtent.height,
+        extent.height);
+        
+        return extent;
+    }
+}
+
+VkSurfaceFormatKHR ChooseSwapSurfaceFormat(
+    VkSurfaceFormatKHR* available_formats,
+    int count)
+{
+    Assert(count!=0);
+    for (int i = 0; i < count; i++) {
+        VkSurfaceFormatKHR* available_format = (available_formats + i);
+        if (available_format->format == VK_FORMAT_B8G8R8A8_SRGB &&
+            available_format->colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+        {
+            return *available_format;
+        }
+    }
+    
+    return *available_formats;
+}
+
+bool CreateSwapChain(VkPhysicalDevice physical_device, VkDevice logical_device)
+{
+    DetermineSwapChainSupport(physical_device); // Redundant since we did this when determining device suitability.
+
+    VkSurfaceFormatKHR surface_format = ChooseSwapSurfaceFormat(SwapChainSupport.Formats, SwapChainSupport.FormatsCount);
+    VkPresentModeKHR present_mode = ChooseSwapPresentMode(SwapChainSupport.PresentModes, SwapChainSupport.PresentModesCount);
+    VkExtent2D extent = ChooseSwapExtent(&SwapChainSupport.Capabilities);
+    
+    uint32 image_count = SwapChainSupport.Capabilities.minImageCount + 1;
+    
+    // 0 is a reserved value indicating there is no maximum
+    if (SwapChainSupport.Capabilities.maxImageCount != 0)
+    {
+        image_count =
+            Util::Min(image_count, SwapChainSupport.Capabilities.maxImageCount);
+    }
+    
+    if (image_count > 20)
+    {
+        return false;
+    }
+    
+    VkSwapchainCreateInfoKHR createInfo = {};
+    createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    createInfo.surface = TargetSurface;
+    createInfo.minImageCount = image_count;
+    createInfo.imageFormat = surface_format.format;
+    createInfo.imageColorSpace = surface_format.colorSpace;
+    createInfo.imageExtent = extent;
+    createInfo.imageArrayLayers = 1;
+    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    
+    uint32 indices[] = {
+        (uint32)QueueFamilies.GraphicsIndex,
+        (uint32)QueueFamilies.PresentIndex};
+    
+    if (QueueFamilies.GraphicsIndex != QueueFamilies.PresentIndex)
+    {
+        createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        createInfo.queueFamilyIndexCount = 2;
+        createInfo.pQueueFamilyIndices = indices;
+    }
+    else
+    {
+        createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        createInfo.queueFamilyIndexCount = 0; // Optional
+        createInfo.pQueueFamilyIndices = nullptr; // Optional
+    }
+
+    createInfo.preTransform = SwapChainSupport.Capabilities.currentTransform;
+    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    createInfo.presentMode = present_mode;
+    createInfo.clipped = VK_TRUE;
+    createInfo.oldSwapchain = VK_NULL_HANDLE;
+    
+    VkSwapchainKHR swapChain;
+    VkResult result = vkCreateSwapchainKHR(
+        logical_device,
+        &createInfo,
+        nullptr,
+        &swapChain);
+    if (result != VK_SUCCESS)
+    {
+        return false;
+    }
+    
+    { // initialize swap chain images
+        vkGetSwapchainImagesKHR(logical_device, swapChain, &image_count, nullptr);
+        vkGetSwapchainImagesKHR(logical_device, swapChain, &image_count, SwapChainImages);
+    }
+    
+    SwapChainImageFormat = surface_format.format;
+    SwapChainExtent = extent;
+    SwapChainSize = image_count;
+    
+    return true;
+}
+
+
+bool ValidationLayersSupported()
 {
     uint32 count;
     vkEnumerateInstanceLayerProperties(&count, nullptr);
@@ -117,28 +369,28 @@ bool CheckValidationLayerSupport()
     {
         return false;
     }
-    VkLayerProperties layer_properties[20];
-    vkEnumerateInstanceLayerProperties(&count, layer_properties);
+    VkLayerProperties available_layers[20];
+    vkEnumerateInstanceLayerProperties(&count, available_layers);
 
     for (int i = 0; i < ValidationLayersCount; i++)
     {
         char* desired_layer = ValidationLayers[i];
-        bool layerFound = false;
+        bool layer_found = false;
 
         for (int j = 0; j < count; j++)
         {
-            VkLayerProperties properties = layer_properties[j];
-            Print("layer name = ");
-            Print(properties.layerName);
-            Print("\n");
-            if (String::Compare(desired_layer, properties.layerName) == 0)
+            VkLayerProperties layer = available_layers[j];
+            //Print("layer name = ");
+            //Print(layer.layerName);
+            //Print("\n");
+            if (String::Compare(desired_layer, layer.layerName) == 0)
             {
-                layerFound = true;
+                layer_found = true;
                 break;
             }
         }
 
-        if (!layerFound) {
+        if (!layer_found) {
             return false;
         }
     }
@@ -148,7 +400,7 @@ bool CheckValidationLayerSupport()
 
 bool CreateInstance()
 {
-    if (!CheckValidationLayerSupport())
+    if (!ValidationLayersSupported())
     {
         Print("Validation layer not supported\n");
         return false;
@@ -244,10 +496,65 @@ void FindQueueFamilies(VkPhysicalDevice physical_device)
     }
 }
 
-bool SuitableDevice(VkPhysicalDevice PhysicalDevice)
+bool DeviceSupportsExtensions(VkPhysicalDevice physical_device)
+{    
+    uint32 count;
+    vkEnumerateDeviceExtensionProperties(
+        physical_device,
+        nullptr,
+        &count,
+        nullptr);
+
+    Print("count of extensions = %d\n", (int64)count);
+    if (count == 0)
+    {
+        return false;
+    }
+    if (count > 200)
+    {
+        return false;
+    }
+    
+    VkExtensionProperties available_extensions[200];
+    vkEnumerateDeviceExtensionProperties(
+        physical_device,
+        nullptr,
+        &count,
+        available_extensions);
+
+    for (int i = 0; i < DeviceExtensionsCount; i++)
+    {
+        char* desired_extension = DeviceExtensions[i];
+        //Print("desire extension name = ");
+        //Print(desired_extension);
+        //Print("\n");
+        bool extension_found = false;
+
+        for (int j = 0; j < count; j++)
+        {
+            VkExtensionProperties extension = available_extensions[j];
+            //Print("extensionName name = ");
+            //Print(extension.extensionName);
+            //Print("\n");
+            if (String::Compare(desired_extension, extension.extensionName) == 0)
+            {
+                extension_found = true;
+                break;
+            }
+        }
+
+        if (!extension_found) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool SuitableDevice(VkPhysicalDevice physical_device)
 {
-    VkPhysicalDeviceProperties deviceProperties;
-    vkGetPhysicalDeviceProperties(PhysicalDevice, &deviceProperties);
+    VkPhysicalDeviceProperties properties;
+    vkGetPhysicalDeviceProperties(physical_device, &properties);
     
     /*
     Print("Device name: ");
@@ -255,19 +562,31 @@ bool SuitableDevice(VkPhysicalDevice PhysicalDevice)
     Print("\n");
     */
     
-    VkPhysicalDeviceFeatures deviceFeatures;
-    vkGetPhysicalDeviceFeatures(PhysicalDevice, &deviceFeatures);
+    VkPhysicalDeviceFeatures features;
+    vkGetPhysicalDeviceFeatures(physical_device, &features);
     
-    FindQueueFamilies(PhysicalDevice);
+    FindQueueFamilies(physical_device);
     
-    if (QueueFamilies.GraphicsAvailable && QueueFamilies.PresentAvailable)
-    {
-        return true;
-    }
-    else
+    if (!QueueFamilies.GraphicsAvailable || !QueueFamilies.PresentAvailable)
     {
         return false;
     }
+    
+    bool extension_support = DeviceSupportsExtensions(physical_device);
+    if (!extension_support)
+    {
+        Print("No extension support\n");
+        return false;
+    }
+
+    bool swap_chain_support = DetermineSwapChainSupport(physical_device);
+    if (!swap_chain_support)
+    {
+        Print("No swap chain support\n");
+        return false;
+    }
+
+    return true;
 }
 
 bool PickPhysicalDevice()
@@ -331,6 +650,8 @@ bool CreateLogicalDevice()
     createInfo.ppEnabledLayerNames = ValidationLayers;
     createInfo.queueCreateInfoCount = 2;
     createInfo.pQueueCreateInfos = queueCreateInfo;
+    createInfo.enabledExtensionCount = DeviceExtensionsCount;
+    createInfo.ppEnabledExtensionNames = DeviceExtensions;
 
     VkResult result = vkCreateDevice(PhysicalDevice, &createInfo, nullptr, &LogicalDevice);
     if (result != VK_SUCCESS)
@@ -354,7 +675,13 @@ void initVulkan(HINSTANCE instance_handle, HWND window_handle)
     success = SetupDebugMessenger();
     success = CreateSurface(instance_handle, window_handle);
     success = PickPhysicalDevice();
+    if (!success)
+    {
+        Print("Failed to pick physical device\n");
+        return;
+    }
     success = CreateLogicalDevice();
+    success = CreateSwapChain(PhysicalDevice, LogicalDevice);
     Print("Finished Vulkan initialization\n");
 }
 
