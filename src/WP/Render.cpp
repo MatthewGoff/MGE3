@@ -3,6 +3,8 @@
 #include <vulkan.h>
 #include <windows.h>
 
+#include "WP.h"
+
 struct 
 {
     bool GraphicsAvailable = false;
@@ -28,6 +30,10 @@ VkQueue GraphicsQueue;
 VkQueue PresentQueue;
 VkSurfaceKHR TargetSurface;
 VkDebugUtilsMessengerEXT DebugMessenger;
+VkPipeline GraphicsPipeline;
+
+VkRenderPass RenderPass;
+VkPipelineLayout PipelineLayout;
 
 VkFormat SwapChainImageFormat;
 VkExtent2D SwapChainExtent;
@@ -47,6 +53,9 @@ int ExtensionsCount = 3;
 char* DeviceExtensions[] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 int DeviceExtensionsCount = 1;
 
+/*
+Tutorial says we have to find this function at runtime. This redirect will just lookup the function each time it is needed.
+*/
 VkResult CreateDebugUtilsMessengerEXT(
     VkInstance instance,
     const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
@@ -71,7 +80,6 @@ VkResult CreateDebugUtilsMessengerEXT(
 
 bool CreateImageViews()
 {
-    //swapChainImageViews.resize(swapChainImages.size());
     for (int i = 0; i < SwapChainSize; i++)
     {
         VkImageViewCreateInfo createInfo = {};
@@ -92,12 +100,14 @@ bool CreateImageViews()
         createInfo.subresourceRange.layerCount = 1;
         
         VkResult result = vkCreateImageView(
-            device,
+            LogicalDevice,
             &createInfo,
             nullptr,
-            swapChainImageViews + i)
+            SwapChainImageViews + i);
         if (result != VK_SUCCESS)
         {
+            Print(__func__);
+            Print(" failure: Call to Vulkan returned %d.\n", result);
             return false;
         }
     }
@@ -164,9 +174,253 @@ bool DetermineSwapChainSupport(VkPhysicalDevice physical_device)
     return true;
 }
 
-void CreateGraphicsPipeline()
+VkResult CreateShaderModule(
+    byte* code,
+    int length,
+    VkShaderModule* shader_module)
 {
+    VkShaderModuleCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = length;
+    createInfo.pCode = (uint32*)code;
+    
+    VkResult result = vkCreateShaderModule(LogicalDevice, &createInfo, nullptr,
+    shader_module);
+    
+    return result;
+}
 
+bool CreateGraphicsPipeline()
+{
+    byte* vert_spv = (byte*)malloc(10 * MEGABYTES);
+    byte* frag_spv = (byte*)malloc(10 * MEGABYTES);
+
+    int vert_size = WP::ReadEntireFile(
+        vert_spv,
+        10 * MEGABYTES,
+        "Assets\\Shaders\\vert.spv");
+    int frag_size = WP::ReadEntireFile(
+        frag_spv,
+        10 * MEGABYTES,
+        "Assets\\Shaders\\frag.spv");
+
+    VkShaderModule vert_module;
+    VkShaderModule frag_module;
+    
+    Print("vert_size = %d.\n", vert_size);
+    Print("frag_size = %d.\n", frag_size);
+    
+    VkResult result;
+    result = CreateShaderModule(vert_spv, vert_size, &vert_module);
+    if (result != VK_SUCCESS) return false;
+
+    result = CreateShaderModule(frag_spv, frag_size, &frag_module);
+    if (result != VK_SUCCESS) return false;
+    
+    VkPipelineShaderStageCreateInfo vert_stage_info = {};
+    vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vert_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vert_stage_info.module = vert_module;
+    vert_stage_info.pName = "main";
+    vert_stage_info.pSpecializationInfo = nullptr;
+    
+    VkPipelineShaderStageCreateInfo frag_stage_info = {};
+    frag_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    frag_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    frag_stage_info.module = frag_module;
+    frag_stage_info.pName = "main";
+    frag_stage_info.pSpecializationInfo = nullptr;
+
+    VkPipelineShaderStageCreateInfo shader_stages[] = {
+        vert_stage_info,
+        frag_stage_info};
+
+    VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
+    vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertex_input_info.vertexBindingDescriptionCount = 0;
+    vertex_input_info.pVertexBindingDescriptions = nullptr; // Optional
+    vertex_input_info.vertexAttributeDescriptionCount = 0;
+    vertex_input_info.pVertexAttributeDescriptions = nullptr; // Optional
+
+    VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
+    input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    input_assembly.primitiveRestartEnable = VK_FALSE;
+
+    VkViewport viewport = {};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = (float) SwapChainExtent.width;
+    viewport.height = (float) SwapChainExtent.height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    VkRect2D scissor = {};
+    scissor.offset = {0, 0};
+    scissor.extent = SwapChainExtent;
+
+    VkPipelineViewportStateCreateInfo viewport_state = {};
+    viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewport_state.viewportCount = 1;
+    viewport_state.pViewports = &viewport;
+    viewport_state.scissorCount = 1;
+    viewport_state.pScissors = &scissor;
+
+    VkPipelineRasterizationStateCreateInfo rasterizer = {};
+    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasterizer.depthClampEnable = VK_FALSE;
+    rasterizer.rasterizerDiscardEnable = VK_FALSE;
+    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+    rasterizer.lineWidth = 1.0f;
+    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.depthBiasEnable = VK_FALSE;
+    rasterizer.depthBiasConstantFactor = 0.0f; // Optional
+    rasterizer.depthBiasClamp = 0.0f; // Optional
+    rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
+    
+    VkPipelineMultisampleStateCreateInfo multisampling = {};
+    multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampling.sampleShadingEnable = VK_FALSE;
+    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisampling.minSampleShading = 1.0f; // Optional
+    multisampling.pSampleMask = nullptr; // Optional
+    multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
+    multisampling.alphaToOneEnable = VK_FALSE; // Optional
+
+    VkPipelineDepthStencilStateCreateInfo depth_stencil = {}; // Not using
+    
+    VkPipelineColorBlendAttachmentState color_blend_attachment = {};
+    color_blend_attachment.colorWriteMask =
+        VK_COLOR_COMPONENT_R_BIT |
+        VK_COLOR_COMPONENT_G_BIT |
+        VK_COLOR_COMPONENT_B_BIT |
+        VK_COLOR_COMPONENT_A_BIT;
+    color_blend_attachment.blendEnable = VK_FALSE;
+    color_blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
+    color_blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+    color_blend_attachment.colorBlendOp = VK_BLEND_OP_ADD;
+    color_blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    color_blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    color_blend_attachment.alphaBlendOp = VK_BLEND_OP_ADD;
+
+    // Typical alpha blending
+    #if 0
+    color_blend_attachment.blendEnable = VK_TRUE;
+    color_blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    color_blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    color_blend_attachment.colorBlendOp = VK_BLEND_OP_ADD;
+    color_blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    color_blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    color_blend_attachment.alphaBlendOp = VK_BLEND_OP_ADD;
+    #endif
+    
+    VkPipelineColorBlendStateCreateInfo color_blending = {};
+    color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    color_blending.logicOpEnable = VK_FALSE; //VK_TRUE. for alpha blend
+    color_blending.logicOp = VK_LOGIC_OP_COPY; // Optional
+    color_blending.attachmentCount = 1;
+    color_blending.pAttachments = &color_blend_attachment;
+    color_blending.blendConstants[0] = 0.0f; // Optional
+    color_blending.blendConstants[1] = 0.0f; // Optional
+    color_blending.blendConstants[2] = 0.0f; // Optional
+    color_blending.blendConstants[3] = 0.0f; // Optional
+
+    VkPipelineDynamicStateCreateInfo dynamicState = {}; // Not using
+
+    VkPipelineLayoutCreateInfo pipeline_layout_info{};
+    pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipeline_layout_info.setLayoutCount = 0; // Optional
+    pipeline_layout_info.pSetLayouts = nullptr; // Optional
+    pipeline_layout_info.pushConstantRangeCount = 0; // Optional
+    pipeline_layout_info.pPushConstantRanges = nullptr; // Optional
+    
+    //VkResult result;
+    result = vkCreatePipelineLayout(
+        LogicalDevice,
+        &pipeline_layout_info,
+        nullptr,
+        &PipelineLayout);
+    if (result != VK_SUCCESS) return false;
+
+    VkGraphicsPipelineCreateInfo pipeline_info = {};
+    pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipeline_info.stageCount = 2;
+    pipeline_info.pStages = shader_stages;
+    pipeline_info.pVertexInputState = &vertex_input_info;
+    pipeline_info.pInputAssemblyState = &input_assembly;
+    pipeline_info.pViewportState = &viewport_state;
+    pipeline_info.pRasterizationState = &rasterizer;
+    pipeline_info.pMultisampleState = &multisampling;
+    pipeline_info.pDepthStencilState = nullptr; // Optional
+    pipeline_info.pColorBlendState = &color_blending;
+    pipeline_info.pDynamicState = nullptr; // Optional
+    pipeline_info.layout = PipelineLayout;
+    pipeline_info.renderPass = RenderPass;
+    pipeline_info.subpass = 0;
+    pipeline_info.basePipelineHandle = VK_NULL_HANDLE; // Optional
+    pipeline_info.basePipelineIndex = -1; // Optional
+
+    //VkResult result;
+    result = vkCreateGraphicsPipelines(
+        LogicalDevice,
+        VK_NULL_HANDLE,
+        1,
+        &pipeline_info,
+        nullptr,
+        &GraphicsPipeline);
+    if (result != VK_SUCCESS)
+    {
+        return false;
+    }
+
+    vkDestroyShaderModule(LogicalDevice, vert_module, nullptr);
+    vkDestroyShaderModule(LogicalDevice, frag_module, nullptr);
+    free(vert_spv);
+    free(frag_spv);
+    
+    return true;
+}
+
+bool CreateRenderPass()
+{
+    VkAttachmentDescription color_attachment = {};
+    color_attachment.format = SwapChainImageFormat;
+    color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    VkAttachmentReference color_attachment_ref = {};
+    color_attachment_ref.attachment = 0;
+    color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass = {};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &color_attachment_ref;
+
+    VkRenderPassCreateInfo render_pass_info = {};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    render_pass_info.attachmentCount = 1;
+    render_pass_info.pAttachments = &color_attachment;
+    render_pass_info.subpassCount = 1;
+    render_pass_info.pSubpasses = &subpass;
+    
+    VkResult result = vkCreateRenderPass(
+        LogicalDevice,
+        &render_pass_info,
+        nullptr,
+        &RenderPass);
+    if (result != VK_SUCCESS)
+    {
+        return false;
+    }
+
+    return true;
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
@@ -175,11 +429,11 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
     void* pUserData)
 {
-    return false;
     Print("Validation layer message: ");
     Print((char*)pCallbackData->pMessage);
     Print("\n");
 
+    // VK_TRUE indicates to stop the thread generating the validation error
     return VK_FALSE;
 }
 
@@ -213,7 +467,8 @@ bool SetupDebugMessenger()
 
     if (result != VK_SUCCESS)
     {
-        Print("failed to set up debug messenger!\n");
+        Print(__func__);
+        Print(" failure: Call to Vulkan returned %d.\n", result);
         return false;
     }
 
@@ -273,6 +528,7 @@ VkSurfaceFormatKHR ChooseSwapSurfaceFormat(
         }
     }
     
+    // First element of array is returned by default
     return *available_formats;
 }
 
@@ -402,7 +658,8 @@ bool CreateInstance()
 {
     if (!ValidationLayersSupported())
     {
-        Print("Validation layer not supported\n");
+        Print(__func__);
+        Print(" failure: Validation layers not supported.\n");
         return false;
     }
     VkApplicationInfo appInfo = {};
@@ -415,10 +672,6 @@ bool CreateInstance()
     
     uint32 glfwExtensionCount = 0;
     const char** glfwExtensions;
-    
-    //glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-    
     
     VkInstanceCreateInfo createInfo = {};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -436,6 +689,8 @@ bool CreateInstance()
     
     if (result != VK_SUCCESS)
     {
+        Print(__func__);
+        Print(" failure: Call to Vulkan returned %d.\n", result);
         return false;
     }
     
@@ -452,6 +707,8 @@ bool CreateSurface(HINSTANCE instance_handle, HWND window_handle)
     VkResult result = vkCreateWin32SurfaceKHR(VulkanInstance, &createInfo, nullptr, &TargetSurface);
     if (result != VK_SUCCESS)
     {
+        Print(__func__);
+        Print(" failure: Call to Vulkan returned %d.\n", result);
         return false;
     }
     
@@ -467,10 +724,14 @@ void FindQueueFamilies(VkPhysicalDevice physical_device)
     
     if (count == 0)
     {
+        Print(__func__);
+        Print(" failure: No queue families found.\n");
         return;
     }
     if (count > 10)
     {
+        Print(__func__);
+        Print(" failure: More than len(buffer) queue families found.\n");
         return;
     }
     VkQueueFamilyProperties FamilyProperties[10];
@@ -505,13 +766,16 @@ bool DeviceSupportsExtensions(VkPhysicalDevice physical_device)
         &count,
         nullptr);
 
-    Print("count of extensions = %d\n", (int64)count);
     if (count == 0)
     {
+        Print(__func__);
+        Print(" failure: No device extensions found.\n");
         return false;
     }
     if (count > 200)
     {
+        Print(__func__);
+        Print(" failure: More than len(buffer) device extensions found.\n");
         return false;
     }
     
@@ -525,17 +789,11 @@ bool DeviceSupportsExtensions(VkPhysicalDevice physical_device)
     for (int i = 0; i < DeviceExtensionsCount; i++)
     {
         char* desired_extension = DeviceExtensions[i];
-        //Print("desire extension name = ");
-        //Print(desired_extension);
-        //Print("\n");
         bool extension_found = false;
 
         for (int j = 0; j < count; j++)
         {
             VkExtensionProperties extension = available_extensions[j];
-            //Print("extensionName name = ");
-            //Print(extension.extensionName);
-            //Print("\n");
             if (String::Compare(desired_extension, extension.extensionName) == 0)
             {
                 extension_found = true;
@@ -555,13 +813,7 @@ bool SuitableDevice(VkPhysicalDevice physical_device)
 {
     VkPhysicalDeviceProperties properties;
     vkGetPhysicalDeviceProperties(physical_device, &properties);
-    
-    /*
-    Print("Device name: ");
-    Print(deviceProperties.deviceName);
-    Print("\n");
-    */
-    
+
     VkPhysicalDeviceFeatures features;
     vkGetPhysicalDeviceFeatures(physical_device, &features);
     
@@ -575,14 +827,14 @@ bool SuitableDevice(VkPhysicalDevice physical_device)
     bool extension_support = DeviceSupportsExtensions(physical_device);
     if (!extension_support)
     {
-        Print("No extension support\n");
+        Print("No extension support.\n");
         return false;
     }
 
     bool swap_chain_support = DetermineSwapChainSupport(physical_device);
     if (!swap_chain_support)
     {
-        Print("No swap chain support\n");
+        Print("No swap chain support.\n");
         return false;
     }
 
@@ -594,7 +846,6 @@ bool PickPhysicalDevice()
     uint32 count = 0;
     vkEnumeratePhysicalDevices(VulkanInstance, &count, nullptr);
     
-    Print("num physical devices = %d\n", (int64)count);
     if (count == 0)
     {
         return false;
@@ -656,7 +907,8 @@ bool CreateLogicalDevice()
     VkResult result = vkCreateDevice(PhysicalDevice, &createInfo, nullptr, &LogicalDevice);
     if (result != VK_SUCCESS)
     {
-        Print("Failed to create logical device: vkresult = %d\n", (int64)result);
+        Print(__func__);
+        Print(" failure: Failed to create logical device: vkresult = %d.\n", (int64)result);
         return false;
     }
     
@@ -668,21 +920,75 @@ bool CreateLogicalDevice()
     return true;
 }
 
-void initVulkan(HINSTANCE instance_handle, HWND window_handle)
+bool initVulkan(HINSTANCE instance_handle, HWND window_handle)
 {
     bool success;
     success = CreateInstance();
+    if (!success)
+    {
+        Print(__func__);
+        Print(" failure: Failed to create instance.\n");
+        return false;
+    }
     success = SetupDebugMessenger();
+    if (!success)
+    {
+        Print(__func__);
+        Print(" failure: Failed to setup debug messenger.\n");
+        return false;
+    }
     success = CreateSurface(instance_handle, window_handle);
+    if (!success)
+    {
+        Print(__func__);
+        Print(" failure: Failed to create surface.\n");
+        return false;
+    }
     success = PickPhysicalDevice();
     if (!success)
     {
-        Print("Failed to pick physical device\n");
-        return;
+        Print(__func__);
+        Print(" failure: Failed to pick physical device.\n");
+        return false;
     }
     success = CreateLogicalDevice();
+    if (!success)
+    {
+        Print(__func__);
+        Print(" failure: Failed to create logical device.\n");
+        return false;
+    }
     success = CreateSwapChain(PhysicalDevice, LogicalDevice);
-    Print("Finished Vulkan initialization\n");
+    if (!success)
+    {
+        Print(__func__);
+        Print(" failure: Failed to create swap chain.\n");
+        return false;
+    }
+    success = CreateImageViews();
+    if (!success)
+    {
+        Print(__func__);
+        Print(" failure: Failed to create image views.\n");
+        return false;
+    }
+    success = CreateRenderPass();
+    if (!success)
+    {
+        Print(__func__);
+        Print(" failure: Failed to create render pass.\n");
+        return false;
+    }
+    success = CreateGraphicsPipeline();
+    if (!success)
+    {
+        Print(__func__);
+        Print(" failure: Failed to create graphics pipeline.\n");
+        return false;
+    }
+    
+    Print("Finished Vulkan initialization.\n");
+    return true;
 }
 
 #if 0
