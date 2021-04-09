@@ -209,6 +209,8 @@ namespace WP // "Windows Platform"
         
         if (file_handle == INVALID_HANDLE_VALUE)
         {
+            Print(__func__);
+            Print(" failure: Could not open file handle.\n");
             return 0;
         }
         
@@ -219,6 +221,8 @@ namespace WP // "Windows Platform"
         if (!sucess || file_size.QuadPart > buffer_size)
         {
             CloseHandle(file_handle);
+            Print(__func__);
+            Print(" failure: File too large or could not determine size.\n");
             return 0;
         }
         Assert(file_size.QuadPart <= UINT32_MAX); // restriction of ReadFile()
@@ -231,13 +235,15 @@ namespace WP // "Windows Platform"
             &bytes_read,
             0);
         
+        CloseHandle(file_handle);
+        
         if (!sucess)
         {
-            CloseHandle(file_handle);
+            Print(__func__);
+            Print(" failure: Call to OS failed.\n");
             return 0;
         }
         
-        CloseHandle(file_handle);
         return bytes_read;
     }
     
