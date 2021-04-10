@@ -3,4 +3,6 @@
 
 bool initVulkan(HINSTANCE instance_handle, HWND window_handle);
 
+bool DrawFrame();
+
 #endif

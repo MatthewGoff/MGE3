@@ -502,7 +502,8 @@ namespace WP // "Windows Platform"
             //Print("Time elapsed = %u\n", frame_time);
             loop_time_stamp = Clock::GetTimeMicro();
             
-            RefreshScreen(window_handle, &RootMemory->ScreenBuffer);
+            //RefreshScreen(window_handle, &RootMemory->ScreenBuffer);
+            DrawFrame();
         }
         
         return 0;

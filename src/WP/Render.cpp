@@ -31,15 +31,21 @@ VkQueue PresentQueue;
 VkSurfaceKHR TargetSurface;
 VkDebugUtilsMessengerEXT DebugMessenger;
 VkPipeline GraphicsPipeline;
+VkCommandPool CommandPool;
+VkCommandBuffer CommandBuffers[20];
+VkSemaphore ImageAvailableSemaphore;
+VkSemaphore RenderFinishedSemaphore;
 
 VkRenderPass RenderPass;
 VkPipelineLayout PipelineLayout;
 
+VkSwapchainKHR SwapChain;
 VkFormat SwapChainImageFormat;
 VkExtent2D SwapChainExtent;
-int SwapChainSize;
+int SwapChainSize; // <= the buffer size (20 atm)
 VkImage SwapChainImages[20];
 VkImageView SwapChainImageViews[20];
+VkFramebuffer SwapChainFramebuffers[20];
 
 char* ValidationLayers[] = {"VK_LAYER_KHRONOS_validation"};
 int ValidationLayersCount = 1;
@@ -76,6 +82,147 @@ VkResult CreateDebugUtilsMessengerEXT(
     {
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
+}
+
+bool CreateSemaphores()
+{
+
+    VkSemaphoreCreateInfo semaphore_info = {};
+    semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkResult result = vkCreateSemaphore(
+        LogicalDevice,
+        &semaphore_info,
+        nullptr,
+        &ImageAvailableSemaphore);
+    if (result != VK_SUCCESS)
+    {
+        return false;
+    }
+    
+    //VkResult result;
+    result = vkCreateSemaphore(
+        LogicalDevice,
+        &semaphore_info,
+        nullptr,
+        &RenderFinishedSemaphore);
+    if (result != VK_SUCCESS)
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool CreateCommandBuffers()
+{
+    VkCommandBufferAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    alloc_info.commandPool = CommandPool;
+    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    alloc_info.commandBufferCount = SwapChainSize;
+
+    VkResult result = vkAllocateCommandBuffers(
+        LogicalDevice,
+        &alloc_info,
+        CommandBuffers);
+    if (result != VK_SUCCESS)
+    {
+        return false;
+    }
+    
+    for (int i = 0; i < SwapChainSize; i++)
+    {
+        VkCommandBufferBeginInfo begin_info = {};
+        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        begin_info.flags = 0; // Optional
+        begin_info.pInheritanceInfo = nullptr; // Optional
+        
+        //VkResult result;
+        result = vkBeginCommandBuffer(CommandBuffers[i], &begin_info);
+        if (result != VK_SUCCESS) {
+            return false;
+        }
+        
+        VkRenderPassBeginInfo render_pass_info = {};
+        render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        render_pass_info.renderPass = RenderPass;
+        render_pass_info.framebuffer = SwapChainFramebuffers[i];
+        render_pass_info.renderArea.offset = {0, 0};
+        render_pass_info.renderArea.extent = SwapChainExtent;
+        VkClearValue clear_color = {0.0f, 0.0f, 0.0f, 1.0f};
+        render_pass_info.clearValueCount = 1;
+        render_pass_info.pClearValues = &clear_color;
+        
+        vkCmdBeginRenderPass(
+            CommandBuffers[i],
+            &render_pass_info,
+            VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(CommandBuffers[i],
+            VK_PIPELINE_BIND_POINT_GRAPHICS,
+            GraphicsPipeline);
+        
+        vkCmdDraw(CommandBuffers[i], 3, 1, 0, 0);
+        
+        vkCmdEndRenderPass(CommandBuffers[i]);
+        
+        VkResult result = vkEndCommandBuffer(CommandBuffers[i]);
+        if (result != VK_SUCCESS)
+        {
+            return false;
+        }
+
+    }
+    
+    return true;
+}
+
+bool CreateCommandPool()
+{
+    VkCommandPoolCreateInfo pool_info = {};
+    pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    pool_info.queueFamilyIndex = QueueFamilies.GraphicsIndex;
+    pool_info.flags = 0; // Optional
+    
+    VkResult result = vkCreateCommandPool(
+        LogicalDevice,
+        &pool_info,
+        nullptr,
+        &CommandPool);
+    if (result != VK_SUCCESS) {
+        return false;
+    }
+
+    return true;
+}
+
+bool CreateFramebuffers()
+{
+    for (int i = 0; i < SwapChainSize; i++) {
+        VkImageView attachments[] = {SwapChainImageViews[i]};
+
+        VkFramebufferCreateInfo framebuffer_info = {};
+        framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebuffer_info.renderPass = RenderPass;
+        framebuffer_info.attachmentCount = 1;
+        framebuffer_info.pAttachments = attachments;
+        framebuffer_info.width = SwapChainExtent.width;
+        framebuffer_info.height = SwapChainExtent.height;
+        framebuffer_info.layers = 1;
+
+        VkResult result = vkCreateFramebuffer(
+            LogicalDevice,
+            &framebuffer_info,
+            nullptr,
+            &SwapChainFramebuffers[i]);
+        if (result != VK_SUCCESS)
+        {
+            return false;
+        }
+    }
+    
+    return true;
 }
 
 bool CreateImageViews()
@@ -403,13 +550,23 @@ bool CreateRenderPass()
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_attachment_ref;
 
+    VkSubpassDependency dependency = {};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    
     VkRenderPassCreateInfo render_pass_info = {};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     render_pass_info.attachmentCount = 1;
     render_pass_info.pAttachments = &color_attachment;
     render_pass_info.subpassCount = 1;
     render_pass_info.pSubpasses = &subpass;
-    
+    render_pass_info.dependencyCount = 1;
+    render_pass_info.pDependencies = &dependency;
+
     VkResult result = vkCreateRenderPass(
         LogicalDevice,
         &render_pass_info,
@@ -587,20 +744,19 @@ bool CreateSwapChain(VkPhysicalDevice physical_device, VkDevice logical_device)
     createInfo.clipped = VK_TRUE;
     createInfo.oldSwapchain = VK_NULL_HANDLE;
     
-    VkSwapchainKHR swapChain;
     VkResult result = vkCreateSwapchainKHR(
         logical_device,
         &createInfo,
         nullptr,
-        &swapChain);
+        &SwapChain);
     if (result != VK_SUCCESS)
     {
         return false;
     }
     
     { // initialize swap chain images
-        vkGetSwapchainImagesKHR(logical_device, swapChain, &image_count, nullptr);
-        vkGetSwapchainImagesKHR(logical_device, swapChain, &image_count, SwapChainImages);
+        vkGetSwapchainImagesKHR(logical_device, SwapChain, &image_count, nullptr);
+        vkGetSwapchainImagesKHR(logical_device, SwapChain, &image_count, SwapChainImages);
     }
     
     SwapChainImageFormat = surface_format.format;
@@ -986,10 +1142,92 @@ bool initVulkan(HINSTANCE instance_handle, HWND window_handle)
         Print(" failure: Failed to create graphics pipeline.\n");
         return false;
     }
+    success = CreateFramebuffers();
+    if (!success)
+    {
+        Print(__func__);
+        Print(" failure: Failed to create framebuffers.\n");
+        return false;
+    }
+    success = CreateCommandPool();
+    if (!success)
+    {
+        Print(__func__);
+        Print(" failure: Failed to create command pool.\n");
+        return false;
+    }
+    success = CreateCommandBuffers();
+    if (!success)
+    {
+        Print(__func__);
+        Print(" failure: Failed to create command buffers.\n");
+        return false;
+    }
+    success = CreateSemaphores();
+    if (!success)
+    {
+        Print(__func__);
+        Print(" failure: Failed to create semaphores.\n");
+        return false;
+    }
     
     Print("Finished Vulkan initialization.\n");
     return true;
 }
+
+bool DrawFrame()
+{
+    uint32 image_index;
+    vkAcquireNextImageKHR(
+        LogicalDevice,
+        SwapChain,
+        UINT64_MAX,
+        ImageAvailableSemaphore,
+        VK_NULL_HANDLE,
+        &image_index);
+
+
+    VkSubmitInfo submit_info = {};
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    
+    VkSemaphore wait_semaphores[] = {ImageAvailableSemaphore};
+    VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    submit_info.waitSemaphoreCount = 1;
+    submit_info.pWaitSemaphores = wait_semaphores;
+    submit_info.pWaitDstStageMask = wait_stages;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &CommandBuffers[image_index];
+
+    VkSemaphore signal_semaphores[] = {RenderFinishedSemaphore};
+    submit_info.signalSemaphoreCount = 1;
+    submit_info.pSignalSemaphores = signal_semaphores;
+
+    VkResult result = vkQueueSubmit(
+        GraphicsQueue,
+        1,
+        &submit_info,
+        VK_NULL_HANDLE);
+    if (result != VK_SUCCESS)
+    {
+        return false;
+    }
+    
+    VkPresentInfoKHR present_info = {};
+    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    present_info.waitSemaphoreCount = 1;
+    present_info.pWaitSemaphores = signal_semaphores;
+    VkSwapchainKHR swap_chains[] = {SwapChain};
+    present_info.swapchainCount = 1;
+    present_info.pSwapchains = swap_chains;
+    present_info.pImageIndices = &image_index;
+    present_info.pResults = nullptr; // Optional
+
+    vkQueuePresentKHR(PresentQueue, &present_info);
+    
+    return true;
+}
+
+
 
 #if 0
 void cleanup()
