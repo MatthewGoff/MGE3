@@ -1,9 +1,10 @@
 #include <windows.h>
 
-#include "WindowsOS.h"
-#include "Clock.h"
+//#include "WindowsOS.h"
 #include "Engine\Engine.h"
 #include "Render.h"
+#include "Clock.h"
+#include "Log.h"
 
 /* This file (and print and clock) contain all and only the code to abstract
  * the Windows operating system. To the best of my knowledge it is conventional
@@ -469,7 +470,7 @@ namespace WindowsOS
         
         Engine::InitializeGame(RootMemory);
         
-        initVulkan(hInstance, window_handle);
+        Render::initVulkan(hInstance, window_handle);
         
         // End initialization
 
@@ -511,7 +512,7 @@ namespace WindowsOS
             loop_time_stamp = Clock::GetTimeMicro();
             
             //RefreshScreen(window_handle, &RootMemory->ScreenBuffer);
-            DrawFrame();
+            Render::DrawFrame();
         }
         
         return 0;

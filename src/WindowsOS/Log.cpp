@@ -53,5 +53,4 @@ namespace WindowsOS
     {
         Log(lvl, (float)var);
     }
-
 }

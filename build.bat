@@ -10,7 +10,9 @@ if not exist build\AppData mkdir build\AppData
 set build_output= -Febuild\bin\main.exe -Fobuild\bin\ -Fdbuild\bin\
 
 :: -Zi => debug information (for VS)
-set build_flags= -Zi
+set build_flags=
+set build_flags=%build_flags% -Zi
+::set build_flags=%build_flags% -std:c++17
 
 set skip_warnings=
 :: 4533 initialization of <var> is skipped by <goto>
@@ -43,7 +45,7 @@ set build_include=%build_include% -FILogging.h
 
 :: source files to be compiled
 set build_source=
-set build_source=%build_source% src\WindowsOS\WinMain.cpp
+set build_source=%build_source% src\WindowsOS\WindowsOS.cpp
 set build_source=%build_source% src\WindowsOS\Clock.cpp
 ::set build_source=%build_source% src\WindowsOS\Print.cpp
 set build_source=%build_source% src\Engine\GameMain.cpp
