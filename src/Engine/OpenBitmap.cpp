@@ -1,5 +1,5 @@
 #include "Engine.h"
-#include "WP\WP.h"
+#include PLATFORM_HEADER
 
 /*
 Takes the location of a (.bmp) file loaded into memory and creates a re-formatted copy at the output location.
@@ -69,7 +69,7 @@ Returns success boolean
 */
 bool Engine::OpenBitmap(byte* mem, int mem_size, Bitmap* destination, int dest_size, char* path)
 {
-    uint32 bytes_read = WP::ReadEntireFile(mem, 10 * MEGABYTES, path);
+    uint32 bytes_read = PLATFORM::ReadEntireFile(mem, 10 * MEGABYTES, path);
     if (bytes_read == 0)
     {
         return false;

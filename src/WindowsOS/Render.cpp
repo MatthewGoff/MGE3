@@ -1,9 +1,8 @@
 #undef UINT32_MAX
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan.h>
-#include <windows.h>
 
-#include "WP.h"
+#include PLATFORM_HEADER
 
 struct 
 {
@@ -252,9 +251,8 @@ bool CreateImageViews()
             nullptr,
             SwapChainImageViews + i);
         if (result != VK_SUCCESS)
-        {
-            Print(__func__);
-            Print(" failure: Call to Vulkan returned %d.\n", result);
+        {            
+            Error("[Error] Vulkan failed to create image view\n");
             return false;
         }
     }
@@ -342,11 +340,11 @@ bool CreateGraphicsPipeline()
     byte* vert_spv = (byte*)malloc(10 * MEGABYTES);
     byte* frag_spv = (byte*)malloc(10 * MEGABYTES);
 
-    int vert_size = WP::ReadEntireFile(
+    int vert_size = PLATFORM::ReadEntireFile(
         vert_spv,
         10 * MEGABYTES,
         "Assets\\Shaders\\vert.spv");
-    int frag_size = WP::ReadEntireFile(
+    int frag_size = PLATFORM::ReadEntireFile(
         frag_spv,
         10 * MEGABYTES,
         "Assets\\Shaders\\frag.spv");
@@ -354,8 +352,12 @@ bool CreateGraphicsPipeline()
     VkShaderModule vert_module;
     VkShaderModule frag_module;
     
-    Print("vert_size = %d.\n", vert_size);
-    Print("frag_size = %d.\n", frag_size);
+    Debug("[Debug] vert_size = ");
+    Debug(vert_size);
+    Debug("\n")
+    Debug("[Debug] frag_size = ");
+    Debug(frag_size);
+    Debug("\n");
     
     VkResult result;
     result = CreateShaderModule(vert_spv, vert_size, &vert_module);
@@ -586,9 +588,9 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
     void* pUserData)
 {
-    Print("Validation layer message: ");
-    Print((char*)pCallbackData->pMessage);
-    Print("\n");
+    Warning("[Warning] Validation layer: ");
+    Warning((char*)pCallbackData->pMessage);
+    Warning("\n");
 
     // VK_TRUE indicates to stop the thread generating the validation error
     return VK_FALSE;
@@ -624,8 +626,7 @@ bool SetupDebugMessenger()
 
     if (result != VK_SUCCESS)
     {
-        Print(__func__);
-        Print(" failure: Call to Vulkan returned %d.\n", result);
+        Error("[Error] Vulkan failed to create debug messenger.\n");
         return false;
     }
 
@@ -772,7 +773,10 @@ bool ValidationLayersSupported()
     uint32 count;
     vkEnumerateInstanceLayerProperties(&count, nullptr);
 
-    Print("count = %d\n", (int64)count);
+    Debug("[Debug] count = ");
+    Debug(count);
+    Debug("\n");
+    
     if (count <= 0)
     {
         return false;
@@ -814,8 +818,7 @@ bool CreateInstance()
 {
     if (!ValidationLayersSupported())
     {
-        Print(__func__);
-        Print(" failure: Validation layers not supported.\n");
+        Error("[Error] Missing support for validation layers.\n")
         return false;
     }
     VkApplicationInfo appInfo = {};
@@ -845,8 +848,7 @@ bool CreateInstance()
     
     if (result != VK_SUCCESS)
     {
-        Print(__func__);
-        Print(" failure: Call to Vulkan returned %d.\n", result);
+        Error("[Error] Vulkan failed to create instance.\n")
         return false;
     }
     
@@ -863,8 +865,11 @@ bool CreateSurface(HINSTANCE instance_handle, HWND window_handle)
     VkResult result = vkCreateWin32SurfaceKHR(VulkanInstance, &createInfo, nullptr, &TargetSurface);
     if (result != VK_SUCCESS)
     {
-        Print(__func__);
-        Print(" failure: Call to Vulkan returned %d.\n", result);
+        Error("[Error] Vulkan failed to create instance with result:")
+        Error(result);
+        Error("\n");
+        
+        return false;
         return false;
     }
     
@@ -880,14 +885,11 @@ void FindQueueFamilies(VkPhysicalDevice physical_device)
     
     if (count == 0)
     {
-        Print(__func__);
-        Print(" failure: No queue families found.\n");
         return;
     }
     if (count > 10)
     {
-        Print(__func__);
-        Print(" failure: More than len(buffer) queue families found.\n");
+        Warning("[Warning] More than len(buffer) queue families found.\n");
         return;
     }
     VkQueueFamilyProperties FamilyProperties[10];
@@ -924,14 +926,11 @@ bool DeviceSupportsExtensions(VkPhysicalDevice physical_device)
 
     if (count == 0)
     {
-        Print(__func__);
-        Print(" failure: No device extensions found.\n");
         return false;
     }
     if (count > 200)
     {
-        Print(__func__);
-        Print(" failure: More than len(buffer) device extensions found.\n");
+        Warning("[Warning] More than len(buffer) extension found.\n");
         return false;
     }
     
@@ -983,14 +982,12 @@ bool SuitableDevice(VkPhysicalDevice physical_device)
     bool extension_support = DeviceSupportsExtensions(physical_device);
     if (!extension_support)
     {
-        Print("No extension support.\n");
         return false;
     }
 
     bool swap_chain_support = DetermineSwapChainSupport(physical_device);
     if (!swap_chain_support)
     {
-        Print("No swap chain support.\n");
         return false;
     }
 
@@ -1062,9 +1059,10 @@ bool CreateLogicalDevice()
 
     VkResult result = vkCreateDevice(PhysicalDevice, &createInfo, nullptr, &LogicalDevice);
     if (result != VK_SUCCESS)
-    {
-        Print(__func__);
-        Print(" failure: Failed to create logical device: vkresult = %d.\n", (int64)result);
+    {        
+        Error("[Error] Failed to create logical device with result: ");
+        Error(result);
+        Error("\n");
         return false;
     }
     
@@ -1082,110 +1080,114 @@ bool initVulkan(HINSTANCE instance_handle, HWND window_handle)
     success = CreateInstance();
     if (!success)
     {
-        Print(__func__);
-        Print(" failure: Failed to create instance.\n");
+        Error("[Error] Failed to create instance.");
         return false;
     }
     success = SetupDebugMessenger();
     if (!success)
     {
-        Print(__func__);
-        Print(" failure: Failed to setup debug messenger.\n");
+        Error("[Error] Failed to setup debug messenger.\n");
         return false;
     }
     success = CreateSurface(instance_handle, window_handle);
     if (!success)
     {
-        Print(__func__);
-        Print(" failure: Failed to create surface.\n");
+        Error("[Error] Failed to create surface.\n");
         return false;
     }
     success = PickPhysicalDevice();
     if (!success)
     {
-        Print(__func__);
-        Print(" failure: Failed to pick physical device.\n");
+        Error("[Error] Failed to pick physical device.\n");
         return false;
     }
     success = CreateLogicalDevice();
     if (!success)
     {
-        Print(__func__);
-        Print(" failure: Failed to create logical device.\n");
+        Error("[Error] Failed to create logical device.\n");
         return false;
     }
     success = CreateSwapChain(PhysicalDevice, LogicalDevice);
     if (!success)
     {
-        Print(__func__);
-        Print(" failure: Failed to create swap chain.\n");
+        Error("[Error] Failed to create swap chain.\n");
         return false;
     }
     success = CreateImageViews();
     if (!success)
     {
-        Print(__func__);
-        Print(" failure: Failed to create image views.\n");
+        Error("[Error] Failed to create image views.\n");
         return false;
     }
     success = CreateRenderPass();
     if (!success)
     {
-        Print(__func__);
-        Print(" failure: Failed to create render pass.\n");
+        Error("[Error] Failed to create render pass.\n");
         return false;
     }
     success = CreateGraphicsPipeline();
     if (!success)
     {
-        Print(__func__);
-        Print(" failure: Failed to create graphics pipeline.\n");
+        Error("[Error] Failed to create graphics pipeline.\n");
         return false;
     }
     success = CreateFramebuffers();
     if (!success)
     {
-        Print(__func__);
-        Print(" failure: Failed to create framebuffers.\n");
+        Error("[Error] Failed to create framebuffers.\n");
         return false;
     }
     success = CreateCommandPool();
     if (!success)
     {
-        Print(__func__);
-        Print(" failure: Failed to create command pool.\n");
+        Error("[Error] Failed to create command pool.\n");
         return false;
     }
     success = CreateCommandBuffers();
     if (!success)
     {
-        Print(__func__);
-        Print(" failure: Failed to create command buffers.\n");
+        Error("[Error] Failed to create command buffers.\n");
         return false;
     }
     success = CreateSemaphores();
     if (!success)
     {
-        Print(__func__);
-        Print(" failure: Failed to create semaphores.\n");
+        Error("[Error] Failed to create semaphores.\n");
         return false;
     }
     
-    Print("Finished Vulkan initialization.\n");
+    Info("[Info] Finished Vulkan initialization.\n");
     return true;
 }
 
 bool DrawFrame()
 {
+    // Make sure asyncronous calls from the previous DrawFrame() have finished
+    vkQueueWaitIdle(PresentQueue);
+    
     uint32 image_index;
-    vkAcquireNextImageKHR(
+    VkResult result = vkAcquireNextImageKHR(
         LogicalDevice,
         SwapChain,
         UINT64_MAX,
         ImageAvailableSemaphore,
         VK_NULL_HANDLE,
         &image_index);
-
+    
+    if (result == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        Error("[Error] Swap chain out of date");
+        return false;
+    }
+    else if (result == VK_SUBOPTIMAL_KHR)
+    {
+        Warning("[Warning] Swap chain suboptimal");
+    }
+    else if (result != VK_SUCCESS)
+    {
+        Error("[Error] Failed to acquire image buffer at top of draw frame");
+        return false;
+    }
 
     VkSubmitInfo submit_info = {};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1202,7 +1204,8 @@ bool DrawFrame()
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = signal_semaphores;
 
-    VkResult result = vkQueueSubmit(
+    //VkResult result;
+    result = vkQueueSubmit(
         GraphicsQueue,
         1,
         &submit_info,
@@ -1223,7 +1226,7 @@ bool DrawFrame()
     present_info.pResults = nullptr; // Optional
 
     vkQueuePresentKHR(PresentQueue, &present_info);
-    
+
     return true;
 }
 

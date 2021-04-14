@@ -1,4 +1,6 @@
 #include <windows.h>
+
+#include "WindowsOS.h"
 #include "Clock.h"
 #include "Engine\Engine.h"
 #include "Render.h"
@@ -8,7 +10,7 @@
  * and as-you-would-expect. It is my own re-creation of the first 25
  * installments of the "Handemade Hero" tutorials.
 */
-namespace WP // "Windows Platform"
+namespace WindowsOS
 {
     static BITMAPINFO BitmapInfo;
     static bool running;
@@ -29,7 +31,7 @@ namespace WP // "Windows Platform"
             "Fatal Error",
             MB_OK|MB_ICONINFORMATION);
     }
-
+    
     Vector::int2 GetWindowDimensions(HWND window_handle)
     {
         Vector::int2 result;
@@ -172,7 +174,9 @@ namespace WP // "Windows Platform"
                         case VK_SPACE:
                         {
                             int32 time = Clock::GetTimeMilli() - InitialTime;
-                            Print("Current time: %f\n", time / 1000.0);
+                            Info("[Info] Current time: ");
+                            Info(time / 1000.0);
+                            Info("\n");
                         }
                     }
                 } break;
@@ -209,8 +213,9 @@ namespace WP // "Windows Platform"
         
         if (file_handle == INVALID_HANDLE_VALUE)
         {
-            Print(__func__);
-            Print(" failure: Could not open file handle.\n");
+            Error("[Error] Could not open file: ");
+            Error(file_name);
+            Error("\n");
             return 0;
         }
         
@@ -221,8 +226,9 @@ namespace WP // "Windows Platform"
         if (!sucess || file_size.QuadPart > buffer_size)
         {
             CloseHandle(file_handle);
-            Print(__func__);
-            Print(" failure: File too large or could not determine size.\n");
+            Error("[Error] File too large or could not determine size: ");
+            Error(file_name);
+            Error("\n");
             return 0;
         }
         Assert(file_size.QuadPart <= UINT32_MAX); // restriction of ReadFile()
@@ -238,9 +244,10 @@ namespace WP // "Windows Platform"
         CloseHandle(file_handle);
         
         if (!sucess)
-        {
-            Print(__func__);
-            Print(" failure: Call to OS failed.\n");
+        {            
+            Error("[Error] OS failed to open file: ");
+            Error(file_name);
+            Error("\n");
             return 0;
         }
         
@@ -327,16 +334,17 @@ namespace WP // "Windows Platform"
     // Runs once after initialization and before the main loop
     void Fluff(RootMemory* RootMemory)
     {
+        
         uint32 bytes_read = ReadEntireFile(
             &RootMemory->FileBuffer,
             RootMemory->FileBuffer.Size,
             "my_data.txt");
         
-        Print("bytes_read = %d\n", (int64)bytes_read);
+        //Print("bytes_read = %d\n", (int64)bytes_read);
         
         uint64 file_size;
         GetFileSize("AppData\\my_data.txt", &file_size);
-        Print("\nFilesize = %d\n", (int64)file_size);
+        //Print("\nFilesize = %d\n", (int64)file_size);
         
         char msg[] = "someone wants to know";
         byte* pointer = (byte*)&msg[0];
@@ -465,7 +473,7 @@ namespace WP // "Windows Platform"
         
         // End initialization
 
-        //Fluff(RootMemory);
+        Fluff(RootMemory);
 
         // Start loop
         int loop_time_stamp = Clock::GetTimeMicro();
@@ -516,5 +524,5 @@ int CALLBACK WinMain(
     LPSTR lpCmdLine,
     int nCmdShow)
 {
-    return WP::WinMain(hInstance);
+    return WindowsOS::WinMain(hInstance);
 }

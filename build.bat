@@ -28,6 +28,7 @@ set build_libs=%build_libs% user32.lib
 set build_libs=%build_libs% gdi32.lib
 :: winmm.lib provides timeBeginPeriod() from <windows.h>
 set build_libs=%build_libs% winmm.lib
+:: Vulkan
 set build_libs=%build_libs% C:\VulkanSDK\1.2.162.1\Lib\vulkan-1.lib
 
 :: Header files to include everywhere
@@ -38,13 +39,13 @@ set build_include=%build_include% -FIStandard\Standard.h
 set build_include=%build_include% -FIMemory.h
 set build_include=%build_include% -FImalloc.h
 set build_include=%build_include% -FImath.h
-set build_include=%build_include% -FIWP\Print.h
+set build_include=%build_include% -FILogging.h
 
 :: source files to be compiled
 set build_source=
-set build_source=%build_source% src\WP\WinMain.cpp
-set build_source=%build_source% src\WP\Clock.cpp
-set build_source=%build_source% src\WP\Print.cpp
+set build_source=%build_source% src\WindowsOS\WinMain.cpp
+set build_source=%build_source% src\WindowsOS\Clock.cpp
+::set build_source=%build_source% src\WindowsOS\Print.cpp
 set build_source=%build_source% src\Engine\GameMain.cpp
 set build_source=%build_source% src\Engine\OpenBitmap.cpp
 set build_source=%build_source% src\Standard\Util.cpp
@@ -52,7 +53,8 @@ set build_source=%build_source% src\Engine\Rendering.cpp
 set build_source=%build_source% src\Standard\Vector.cpp
 set build_source=%build_source% src\Engine\AssetManager.cpp
 set build_source=%build_source% src\Standard\String.cpp
-set build_source=%build_source% src\WP\Render.cpp
+set build_source=%build_source% src\WindowsOS\Render.cpp
+set build_source=%build_source% src\WindowsOS\Log.cpp
 
 :: cl @command_file.txt
 cl%build_output%%build_flags%%build_include%%skip_warnings%%build_libs%%build_sdk_include%%build_source%
