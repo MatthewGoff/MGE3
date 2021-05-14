@@ -9,4 +9,6 @@
 #define PLATFORM WindowsOS
 #define PLATFORM_HEADER "WindowsOS\\WindowsOS.h"
 
+#define BUILD_LOG_LEVEL 5
+
 #endif

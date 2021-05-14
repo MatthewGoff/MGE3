@@ -47,13 +47,13 @@ def compile_command():
     command += " -I C:\\VulkanSDK\\1.2.162.1\\Include\\vulkan"
 
     ## Always include ##
-    command += " -FICommon.h"
+    command += " -FITypes.h"
     command += " -FIConfig.h"
+    command += " -FIMacros.h"
     command += " -FIStandard\\Standard.h"
     command += " -FIMemory.h"
     command += " -FImalloc.h"
     command += " -FImath.h"
-    command += " -FILogging.h"
 
     return command
 
