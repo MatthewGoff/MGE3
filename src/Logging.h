@@ -1,6 +1,8 @@
 #ifndef LOGGING_H
 #define LOGGING_H
 
+#include PLATFORM_HEADER
+
 #define BUILD_LOG_LEVEL 5
     
 #if BUILD_LOG_LEVEL >= 5
