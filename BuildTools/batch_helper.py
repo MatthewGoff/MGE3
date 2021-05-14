@@ -62,6 +62,7 @@ def link_command():
 
     ## General ##
     command += " -OUT:build\\main.exe" # Location of executable (.exe)
+    command += " -nologo" # No logo
 
     ## Debug ##
     if (True):
@@ -94,7 +95,6 @@ def create_batch():
     for root, dirs, files in os.walk("src"):
         for dir in dirs:
             dir_path = obj_path(os.path.join(root, dir))
-            print("dir_path = " + dir_path)
             output += "if not exist {0} mkdir {0}\n".format(dir_path)
     
     for source_file in source_files():
