@@ -1,10 +1,8 @@
 #include <windows.h>
 
-//#include "WindowsOS.h"
 #include "Engine\Engine.h"
-#include "Render.h"
+#include "Rendering\Rendering.h"
 #include "Clock.h"
-#include "Log.h"
 
 /* This file (and print and clock) contain all and only the code to abstract
  * the Windows operating system. To the best of my knowledge it is conventional
@@ -22,7 +20,7 @@ namespace WindowsOS
      * 32 bit uint. We pass UINT32_MAX and VirtualAlloc() will round up to the
      * nearest block length which will be exactly 4 gigabytes.
     */
-    static uint32 RootMemorySize = UINT32_MAX;
+    static uint32 RootMemorySize = (0xFFFFFFFF);//UINT32_MAX;
     
     void PostFatalMessage(char* message)
     {
@@ -222,9 +220,8 @@ namespace WindowsOS
         
         LARGE_INTEGER file_size;
         // GetFileSize (without "ex") returns two 32 bit values.
-        bool sucess = GetFileSizeEx(file_handle, &file_size);
-        
-        if (!sucess || file_size.QuadPart > buffer_size)
+        bool success = GetFileSizeEx(file_handle, &file_size);
+        if (!success || file_size.QuadPart > buffer_size)
         {
             CloseHandle(file_handle);
             Error("[Error] File too large or could not determine size: ");
@@ -232,10 +229,12 @@ namespace WindowsOS
             Error("\n");
             return 0;
         }
-        Assert(file_size.QuadPart <= UINT32_MAX); // restriction of ReadFile()
+
+        //ReadFile() is restricted by UINT32_MAX
+        Assert(file_size.QuadPart <= (0xFFFFFFFF));
         
         DWORD bytes_read;
-        sucess = ReadFile(
+        success = ReadFile(
             file_handle,
             buffer_ptr,
             (uint32) file_size.QuadPart,
@@ -244,7 +243,7 @@ namespace WindowsOS
         
         CloseHandle(file_handle);
         
-        if (!sucess)
+        if (!success)
         {            
             Error("[Error] OS failed to open file: ");
             Error(file_name);
@@ -335,11 +334,10 @@ namespace WindowsOS
     // Runs once after initialization and before the main loop
     void Fluff(RootMemory* RootMemory)
     {
-        
         uint32 bytes_read = ReadEntireFile(
             &RootMemory->FileBuffer,
-            RootMemory->FileBuffer.Size,
-            "my_data.txt");
+            10 * MEGABYTES,
+            "AppData\\my_data.txt");
         
         //Print("bytes_read = %d\n", (int64)bytes_read);
         
@@ -470,7 +468,7 @@ namespace WindowsOS
         
         Engine::InitializeGame(RootMemory);
         
-        Render::initVulkan(hInstance, window_handle);
+        Rendering::initVulkan(hInstance, window_handle);
         
         // End initialization
 
@@ -512,7 +510,7 @@ namespace WindowsOS
             loop_time_stamp = Clock::GetTimeMicro();
             
             //RefreshScreen(window_handle, &RootMemory->ScreenBuffer);
-            Render::DrawFrame();
+            Rendering::DrawFrame();
         }
         
         return 0;
