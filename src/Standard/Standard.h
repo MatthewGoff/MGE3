@@ -9,6 +9,13 @@ namespace Vector
         float y;
     };
     
+    struct float3
+    {
+        float x;
+        float y;
+        float z;
+    };
+    
     struct int2
     {
         int x;
