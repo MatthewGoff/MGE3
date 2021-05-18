@@ -8,32 +8,7 @@
 namespace WindowsOS {
 namespace Rendering
 {
-    
-    VkInstance hVulkan = VK_NULL_HANDLE;
-    VkSurfaceKHR hSurface;
-    QueueFamilySupport QueueFamilySupport;
-    VkPhysicalDevice hPhysicalDevice = VK_NULL_HANDLE; // remove this
-    VkDevice hLogicalDevice;
-    VkQueue GraphicsQueue;
-    VkQueue PresentQueue;
-    VkSwapchainKHR hSwapchain;
-    SwapchainConfig SwapchainConfig;
-    VkImageView ImageViews[20];
-    VkRenderPass hRenderPass;
-    VkPipeline hPipeline;
-    VkCommandBuffer CommandBuffers[20];
-    VkSemaphore ImageAvailableSemaphore;
-    VkSemaphore RenderFinishedSemaphore;
-    VkDescriptorSetLayout DescriptorSetLayout;
-    
-    VkBuffer VertexBuffer;
-    VkDeviceMemory VertexBufferMemory;
-
-    //VkBuffer StagingBuffer;
-    //VkDeviceMemory StagingBufferMemory;
-
-    VkBuffer UniformBuffers[2];
-    VkDeviceMemory UniformBuffersMemory[2];
+    VulkanEnvironment Environment;
 
     VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -99,8 +74,6 @@ namespace Rendering
         
         config->DeviceExtensionsCount = 1;
         config->DeviceExtensions = new char*[] {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-        
-        config->SwapchainLength = 2;
     }
     
     bool FindMemoryType(
@@ -158,7 +131,11 @@ namespace Rendering
             &mem_requirements);
         
         uint32 memory_type;
-        bool success = FindMemoryType(hPhysicalDevice, mem_requirements.memoryTypeBits, properties, memory_type);
+        bool success = FindMemoryType(
+            Environment.PhysicalDevice,
+            mem_requirements.memoryTypeBits,
+            properties,
+            memory_type);
         if (!success) {return false;}
         
         VkMemoryAllocateInfo alloc_info = {};
@@ -217,8 +194,29 @@ namespace Rendering
         return true;
     }
 
-#if false
-    bool CreateDescriptorSetLayout()
+    bool CreateUniformBuffers(VulkanEnvironment* env)
+    {
+        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
+
+        for (int i = 0; i < Environment.SwapchainConfig.Size; i++)
+        {
+            bool success = CreateDeviceBuffer(
+                env->LogicalDevice,
+                bufferSize,
+                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                &env->UniformBuffers[i],
+                &env->UniformBuffersMemory[i]);
+            if (!success)
+            {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+
+    bool CreateDescriptorSetLayout(VulkanEnvironment* env)
     {
         VkDescriptorSetLayoutBinding ubo_layout_binding = {};
         ubo_layout_binding.binding = 0;
@@ -232,7 +230,11 @@ namespace Rendering
         layout_info.bindingCount = 1;
         layout_info.pBindings = &ubo_layout_binding;
         
-        VkResult = vkCreateDescriptorSetLayout(device, &layout_info, nullptr, &DescriptorSetLayout);
+        VkResult result = vkCreateDescriptorSetLayout(
+            env->LogicalDevice,
+            &layout_info,
+            nullptr,
+            &env->DescriptorSetLayout);
         if (result != VK_SUCCESS)
         {
             return false;
@@ -241,7 +243,80 @@ namespace Rendering
 
         return true;
     }
-#endif
+
+    bool CreateDescriptorPool(VulkanEnvironment* env)
+    {
+        VkDescriptorPoolSize pool_size = {};
+        pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        pool_size.descriptorCount = (uint32)Environment.SwapchainConfig.Size;
+
+        VkDescriptorPoolCreateInfo pool_info = {};
+        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        pool_info.poolSizeCount = 1;
+        pool_info.pPoolSizes = &pool_size;
+        pool_info.maxSets = (uint32)Environment.SwapchainConfig.Size;
+
+        VkResult result = vkCreateDescriptorPool(
+            env->LogicalDevice,
+            &pool_info,
+            nullptr,
+            &env->DescriptorPool);
+        
+        if (result != VK_SUCCESS)
+        {
+            return false;
+            // for reference: "failed to create descriptor pool!"
+        }
+        
+        return true;
+    }
+
+    bool CreateDescriptorSets(VulkanEnvironment* env)
+    {
+        VkDescriptorSetLayout layouts[20];
+        for (int i = 0; i < 20; i++)
+        {
+            layouts[i] = env->DescriptorSetLayout;
+        }
+        
+        VkDescriptorSetAllocateInfo alloc_info = {};
+        alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        alloc_info.descriptorPool = env->DescriptorPool;
+        alloc_info.descriptorSetCount = (uint32)Environment.SwapchainConfig.Size;
+        alloc_info.pSetLayouts = layouts;
+
+        VkResult result = vkAllocateDescriptorSets(
+            env->LogicalDevice,
+            &alloc_info,
+            env->DescriptorSets);
+        if (result != VK_SUCCESS) {
+            return false;
+            // for reference: "failed to allocate descriptor sets!"
+        }
+
+        for (int i = 0; i < Environment.SwapchainConfig.Size; i++) {
+            VkDescriptorBufferInfo buffer_info = {};
+            buffer_info.buffer = env->UniformBuffers[i];
+            buffer_info.offset = 0;
+            buffer_info.range = sizeof(UniformBufferObject);
+            
+            VkWriteDescriptorSet descriptor_write = {};
+            descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptor_write.dstSet = env->DescriptorSets[i];
+            descriptor_write.dstBinding = 0;
+            descriptor_write.dstArrayElement = 0;
+            descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptor_write.descriptorCount = 1;
+            descriptor_write.pBufferInfo = &buffer_info;
+            descriptor_write.pImageInfo = nullptr; // Optional
+            descriptor_write.pTexelBufferView = nullptr; // Optional
+            
+            vkUpdateDescriptorSets(env->LogicalDevice, 1, &descriptor_write, 0, nullptr);
+        }
+
+        return true;
+    }
+
 #if false
     bool CreateImage()
     {
@@ -278,18 +353,18 @@ namespace Rendering
 
         bool success;
 
-        success = Init::CreateInstance(&config, &debug_info, &hVulkan);
+        success = Init::CreateInstance(&config, &debug_info, &Environment.Instance);
         if (!success)
         {
-            Error("[Error] Failed to create instance.");
+            Error("[Error] Failed to create instance.\n");
             return false;
         }
 
         success = Init::CreateSurface(
-            hVulkan,
+            Environment.Instance,
             instance_handle,
             window_handle,
-            &hSurface);
+            &Environment.Surface);
         if (!success)
         {
             Error("[Error] Failed to create surface.\n");
@@ -298,11 +373,11 @@ namespace Rendering
 
         success = Init::SelectPhysicalDevice(
             &config,
-            hVulkan,
-            hSurface,
-            &QueueFamilySupport,
-            &SwapchainConfig,
-            &hPhysicalDevice);
+            Environment.Instance,
+            Environment.Surface,
+            &Environment.QueueFamilyConfig,
+            &Environment.SwapchainConfig,
+            &Environment.PhysicalDevice);
         if (!success)
         {
             Error("[Error] Failed to select physical device.\n");
@@ -311,11 +386,11 @@ namespace Rendering
 
         success = Init::CreateLogicalDevice(
             &config,
-            hPhysicalDevice,
-            &QueueFamilySupport,    
-            &GraphicsQueue,
-            &PresentQueue,
-            &hLogicalDevice);
+            Environment.PhysicalDevice,
+            &Environment.QueueFamilyConfig,    
+            &Environment.GraphicsQueue,
+            &Environment.PresentQueue,
+            &Environment.LogicalDevice);
         if (!success)
         {
             Error("[Error] Failed to create logical device.\n");
@@ -323,53 +398,70 @@ namespace Rendering
         }
 
         success = Init::CreateSwapchain(
-            hLogicalDevice,
-            hSurface,
-            &QueueFamilySupport,
-            &SwapchainConfig,
-            ImageViews,
-            &hSwapchain);
+            &Environment,
+            &Environment.QueueFamilyConfig,
+            &Environment.SwapchainConfig);
         if (!success)
         {
             Error("[Error] Failed to create swap chain.\n");
             return false;
         }
-#if false
-        success = CreateDescriptorSetLayout();
+
+        success = CreateDescriptorSetLayout(&Environment);
         if (!success)
         {
             Error("[Error] Failed to create descriptor set layout.\n");
             return false;
         }
-#endif
+
         success = Init::CreatePipeline(
-            hLogicalDevice,
-            &SwapchainConfig,
-            &hRenderPass,
-            &hPipeline,
-            &DescriptorSetLayout);
+            &Environment,
+            Environment.LogicalDevice,
+            &Environment.SwapchainConfig,
+            &Environment.RenderPass,
+            &Environment.Pipeline,
+            &Environment.DescriptorSetLayout);
         if (!success)
         {
             Error("[Error] Failed to create graphics pipeline.\n");
             return false;
         }
         
-        success = CreateVertexBuffer(hLogicalDevice, &VertexBuffer, &VertexBufferMemory);
+        success = CreateVertexBuffer(
+            Environment.LogicalDevice,
+            &Environment.VertexBuffer,
+            &Environment.VertexBufferMemory);
         if (!success)
         {
-            Error("[Error] Failed to create vertex buffer");
+            Error("[Error] Failed to create vertex buffer.\n");
+            return false;
+        }
+
+        success = CreateUniformBuffers(&Environment);
+        if (!success)
+        {
+            Error("[Error] Failed to create uniform buffers.\n");
+            return false;
+        }
+
+        success = CreateDescriptorPool(&Environment);
+        if (!success)
+        {
+            Error("[Error] Failed to create descriptor pool.\n");
+            return false;
+        }
+
+        success = CreateDescriptorSets(&Environment);
+        if (!success)
+        {
+            Error("[Error] Failed to create descriptor sets.\n");
             return false;
         }
 
         success = Init::CreateCommandBuffers(
-            hLogicalDevice,
-            &QueueFamilySupport,
-            VertexBuffer,
-            hPipeline,
-            &SwapchainConfig,
-            hRenderPass,
-            ImageViews,
-            CommandBuffers);
+            &Environment,
+            &Environment.QueueFamilyConfig,
+            &Environment.SwapchainConfig);
         if (!success)
         {
             Error("[Error] Failed to create command buffers.\n");
@@ -377,11 +469,11 @@ namespace Rendering
         }
 
         success = Init::CreateVKSemaphore(
-             hLogicalDevice,
-            &ImageAvailableSemaphore);
+            Environment.LogicalDevice,
+            &Environment.ImageAvailableSemaphore);
         success = success && Init::CreateVKSemaphore(
-            hLogicalDevice,
-            &RenderFinishedSemaphore);
+            Environment.LogicalDevice,
+            &Environment.RenderFinishedSemaphore);
         if (!success)
         {
             Error("[Error] Failed to create semaphores.\n");
@@ -399,17 +491,39 @@ namespace Rendering
         return true;
     }
 
+    void UpdateUniformBuffer(uint32 currentImage)
+    {
+        UniformBufferObject ubo = {};
+
+        ubo.CameraPosition = {0.1, 0.1};
+        ubo.CameraDimensions = {0.1, 0.1};
+        
+        void* data;
+        vkMapMemory(
+            Environment.LogicalDevice,
+            Environment.UniformBuffersMemory[currentImage],
+            0,
+            sizeof(ubo),
+            0,
+            &data);
+        memcpy(data, &ubo, sizeof(ubo));
+        vkUnmapMemory(
+            Environment.LogicalDevice,
+            Environment.UniformBuffersMemory[currentImage]);
+
+    }
+    
     bool DrawFrame()
     {
         // Make sure asyncronous calls from the previous DrawFrame() have finished
-        vkQueueWaitIdle(PresentQueue);
+        vkQueueWaitIdle(Environment.PresentQueue);
         
         uint32 image_index;
         VkResult result = vkAcquireNextImageKHR(
-            hLogicalDevice,
-            hSwapchain,
+            Environment.LogicalDevice,
+            Environment.Swapchain,
             UINT64_MAX,
-            ImageAvailableSemaphore,
+            Environment.ImageAvailableSemaphore,
             VK_NULL_HANDLE,
             &image_index);
         
@@ -428,24 +542,26 @@ namespace Rendering
             return false;
         }
 
+        UpdateUniformBuffer(image_index);
+
         VkSubmitInfo submit_info = {};
         submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         
-        VkSemaphore wait_semaphores[] = {ImageAvailableSemaphore};
+        VkSemaphore wait_semaphores[] = {Environment.ImageAvailableSemaphore};
         VkPipelineStageFlags wait_stages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
         submit_info.waitSemaphoreCount = 1;
         submit_info.pWaitSemaphores = wait_semaphores;
         submit_info.pWaitDstStageMask = wait_stages;
         submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &CommandBuffers[image_index];
+        submit_info.pCommandBuffers = &Environment.CommandBuffers[image_index];
 
-        VkSemaphore signal_semaphores[] = {RenderFinishedSemaphore};
+        VkSemaphore signal_semaphores[] = {Environment.RenderFinishedSemaphore};
         submit_info.signalSemaphoreCount = 1;
         submit_info.pSignalSemaphores = signal_semaphores;
 
         //VkResult result;
         result = vkQueueSubmit(
-            GraphicsQueue,
+            Environment.GraphicsQueue,
             1,
             &submit_info,
             VK_NULL_HANDLE);
@@ -458,14 +574,14 @@ namespace Rendering
         present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
         present_info.waitSemaphoreCount = 1;
         present_info.pWaitSemaphores = signal_semaphores;
-        VkSwapchainKHR swap_chains[] = {hSwapchain};
+        VkSwapchainKHR swap_chains[] = {Environment.Swapchain};
         present_info.swapchainCount = 1;
         present_info.pSwapchains = swap_chains;
         present_info.pImageIndices = &image_index;
         present_info.pResults = nullptr; // Optional
 
-        vkQueuePresentKHR(PresentQueue, &present_info);
-        vkQueueWaitIdle(PresentQueue);
+        vkQueuePresentKHR(Environment.PresentQueue, &present_info);
+        vkQueueWaitIdle(Environment.PresentQueue);
 
         return true;
     }

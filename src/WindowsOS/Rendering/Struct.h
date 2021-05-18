@@ -55,7 +55,7 @@ namespace Rendering
         }
     };
     
-    struct QueueFamilySupport
+    struct QueueFamilyConfig
     {
         bool GraphicsAvailable;
         int GraphicsIndex;
@@ -66,6 +66,8 @@ namespace Rendering
 
     struct SwapchainConfig
     {
+        static const int MAX_SIZE = 10; // This is referenced when creating arrays
+        
         VkSurfaceCapabilitiesKHR Capabilities;
         VkSurfaceFormatKHR SurfaceFormat;
         VkPresentModeKHR PresentMode;
@@ -83,25 +85,16 @@ namespace Rendering
         
         int DeviceExtensionsCount;
         char** DeviceExtensions;
-        
-        int SwapchainLength;
-    };
-#if false
-    /*
-    For objects with (one and only one) instance per swapchain image.
-    */
-    struct SwapGroup
-    {
-        VkImageView ImageView;
-        VkCommandBuffer CommandBuffer;
-        VkBuffer UniformBuffer;
-        VkDeviceMemory UniformBufferMemory;
     };
     
-    struct VulkanObjects
+    struct VulkanEnvironment
     {
-        // These are, catagorically, opaque handles to the objects in question
-        VkInstance Instance
+        // Config
+        QueueFamilyConfig QueueFamilyConfig;
+        SwapchainConfig SwapchainConfig;
+        
+        // Vulkan Objects (notice "Vk" prefix)
+        VkInstance Instance;
         VkSurfaceKHR Surface;
         VkPhysicalDevice PhysicalDevice;
         VkDevice LogicalDevice;
@@ -109,21 +102,27 @@ namespace Rendering
         VkQueue PresentQueue;
         VkSwapchainKHR Swapchain;
         VkRenderPass RenderPass;
+        VkPipelineLayout PipelineLayout;
         VkPipeline Pipeline;
+        VkCommandPool CommandPool;
+        
         VkSemaphore ImageAvailableSemaphore;
         VkSemaphore RenderFinishedSemaphore;
-        VkDescriptorSetLayout DescriptorSetLayout;
         
+        VkDescriptorSetLayout DescriptorSetLayout;
+        VkDescriptorPool DescriptorPool;
+
         VkBuffer VertexBuffer;
         VkDeviceMemory VertexBufferMemory;        
         
-        SwapGroup SwapGroup[];
-        //QueueFamilies QueueFamilies;
-        //SwapchainSupport SwapchainSupport;
-        //SwapchainMeta SwapchainMeta;
-    }
-    
-#endif
+        VkImage Images[SwapchainConfig::MAX_SIZE];
+        VkImageView ImageViews[SwapchainConfig::MAX_SIZE];
+        VkFramebuffer Framebuffers[SwapchainConfig::MAX_SIZE];
+        VkCommandBuffer CommandBuffers[SwapchainConfig::MAX_SIZE];
+        VkBuffer UniformBuffers[SwapchainConfig::MAX_SIZE];
+        VkDeviceMemory UniformBuffersMemory[SwapchainConfig::MAX_SIZE];
+        VkDescriptorSet DescriptorSets[SwapchainConfig::MAX_SIZE];
+    };
 }
 }
 #endif

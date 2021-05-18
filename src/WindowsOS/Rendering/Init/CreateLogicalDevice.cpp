@@ -6,7 +6,7 @@ namespace Init
     bool CreateLogicalDevice(
         VulkanConfig* config,
         VkPhysicalDevice physical_device_handle,
-        QueueFamilySupport* queue_family_support,    
+        QueueFamilyConfig* queue_family_config,    
         VkQueue* GraphicsQueue,
         VkQueue* PresentQueue,
         VkDevice* logical_device_handle)
@@ -14,11 +14,11 @@ namespace Init
         VkDeviceQueueCreateInfo queueCreateInfo[1];
         float queuePriority = 1.0f;
         // One entry for each unique queue family index
-        if (queue_family_support->GraphicsIndex == queue_family_support->PresentIndex)
+        if (queue_family_config->GraphicsIndex == queue_family_config->PresentIndex)
         {
             queueCreateInfo[0] = {};
             queueCreateInfo[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo[0].queueFamilyIndex = queue_family_support->GraphicsIndex;
+            queueCreateInfo[0].queueFamilyIndex = queue_family_config->GraphicsIndex;
             queueCreateInfo[0].queueCount = 1;
             float queuePriority = 1.0f;
             queueCreateInfo[0].pQueuePriorities = &queuePriority;
@@ -52,12 +52,12 @@ namespace Init
         // Spec says they are void return
         vkGetDeviceQueue(
             *logical_device_handle,
-            queue_family_support->GraphicsIndex,
+            queue_family_config->GraphicsIndex,
             0,
             GraphicsQueue);
         vkGetDeviceQueue(
             *logical_device_handle,
-            queue_family_support->PresentIndex,
+            queue_family_config->PresentIndex,
             0,
             PresentQueue);
         

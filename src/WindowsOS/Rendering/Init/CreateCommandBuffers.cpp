@@ -2,22 +2,15 @@
 
 namespace WindowsOS { namespace Rendering {
 namespace Init
-{
-    VkFramebuffer Framebuffers[20];
-    VkCommandPool CommandPool;
-        
-    bool CreateFramebuffers(
-        VkDevice logical_device_handle,
-        SwapchainConfig* swapchain_config,
-        VkRenderPass render_pass_handle,
-        VkImageView* image_views)
+{        
+    bool CreateFramebuffers(VulkanEnvironment* env, SwapchainConfig* swapchain_config)
     {
         for (int i = 0; i < swapchain_config->Size; i++) {
-            VkImageView attachments[] = {image_views[i]};
+            VkImageView attachments[] = {env->ImageViews[i]};
 
             VkFramebufferCreateInfo framebuffer_info = {};
             framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebuffer_info.renderPass = render_pass_handle;
+            framebuffer_info.renderPass = env->RenderPass;
             framebuffer_info.attachmentCount = 1;
             framebuffer_info.pAttachments = attachments;
             framebuffer_info.width = swapchain_config->Extent.width;
@@ -25,10 +18,10 @@ namespace Init
             framebuffer_info.layers = 1;
 
             VkResult result = vkCreateFramebuffer(
-                logical_device_handle,
+                env->LogicalDevice,
                 &framebuffer_info,
                 nullptr,
-                &Framebuffers[i]);
+                &env->Framebuffers[i]);
             if (result != VK_SUCCESS)
             {
                 return false;
@@ -39,19 +32,19 @@ namespace Init
     }
     
     bool CreateCommandPool(
-        VkDevice logical_device_handle,
-        QueueFamilySupport* queue_family_support)
+        VulkanEnvironment* env,
+        QueueFamilyConfig* queue_family_config)
     {
         VkCommandPoolCreateInfo pool_info = {};
         pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        pool_info.queueFamilyIndex = queue_family_support->GraphicsIndex;
+        pool_info.queueFamilyIndex = queue_family_config->GraphicsIndex;
         pool_info.flags = 0; // Optional
         
         VkResult result = vkCreateCommandPool(
-            logical_device_handle,
+            env->LogicalDevice,
             &pool_info,
             nullptr,
-            &CommandPool);
+            &env->CommandPool);
         if (result != VK_SUCCESS) {
             return false;
         }
@@ -60,27 +53,18 @@ namespace Init
     }
         
     bool CreateCommandBuffers(
-        VkDevice logical_device_handle,
-        QueueFamilySupport* queue_family_support,
-        VkBuffer vertex_buffer,
-        VkPipeline pipeline_handle,
-        SwapchainConfig* swapchain_config,
-        VkRenderPass render_pass_handle,
-        VkImageView* image_views,
-        VkCommandBuffer* command_buffers)
+        VulkanEnvironment* env,
+        QueueFamilyConfig* queue_family_config,
+        SwapchainConfig* swapchain_config)
     {
-        bool success = CreateFramebuffers(
-            logical_device_handle,
-            swapchain_config,
-            render_pass_handle,
-            image_views);
+        bool success = CreateFramebuffers(env, swapchain_config);
         if (!success)
         {
             Error("[Error] Failed to create framebuffers.\n");
             return false;
         }
 
-        success = CreateCommandPool(logical_device_handle, queue_family_support);
+        success = CreateCommandPool(env, queue_family_config);
         if (!success)
         {
             Error("[Error] Failed to create command pool.\n");
@@ -89,14 +73,14 @@ namespace Init
 
         VkCommandBufferAllocateInfo alloc_info = {};
         alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        alloc_info.commandPool = CommandPool;
+        alloc_info.commandPool = env->CommandPool;
         alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         alloc_info.commandBufferCount = swapchain_config->Size;
 
         VkResult result = vkAllocateCommandBuffers(
-            logical_device_handle,
+            env->LogicalDevice,
             &alloc_info,
-            command_buffers);
+            env->CommandBuffers);
         if (result != VK_SUCCESS)
         {
             return false;
@@ -110,15 +94,15 @@ namespace Init
             begin_info.pInheritanceInfo = nullptr; // Optional
             
             //VkResult result;
-            result = vkBeginCommandBuffer(command_buffers[i], &begin_info);
+            result = vkBeginCommandBuffer(env->CommandBuffers[i], &begin_info);
             if (result != VK_SUCCESS) {
                 return false;
             }
             
             VkRenderPassBeginInfo render_pass_info = {};
             render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            render_pass_info.renderPass = render_pass_handle;
-            render_pass_info.framebuffer = Framebuffers[i];
+            render_pass_info.renderPass = env->RenderPass;
+            render_pass_info.framebuffer = env->Framebuffers[i];
             render_pass_info.renderArea.offset = {0, 0};
             render_pass_info.renderArea.extent = swapchain_config->Extent;
             VkClearValue clear_color = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -126,23 +110,34 @@ namespace Init
             render_pass_info.pClearValues = &clear_color;
             
             vkCmdBeginRenderPass(
-                command_buffers[i],
+                env->CommandBuffers[i],
                 &render_pass_info,
                 VK_SUBPASS_CONTENTS_INLINE);
 
-            vkCmdBindPipeline(command_buffers[i],
+            vkCmdBindPipeline(
+                env->CommandBuffers[i],
                 VK_PIPELINE_BIND_POINT_GRAPHICS,
-                pipeline_handle);
+                env->Pipeline);
             
-            VkBuffer buffers[] = {vertex_buffer};
+            VkBuffer buffers[] = {env->VertexBuffer};
             VkDeviceSize offsets[] = {0};
-            vkCmdBindVertexBuffers(command_buffers[i], 0, 1, buffers, offsets);
+            vkCmdBindVertexBuffers(env->CommandBuffers[i], 0, 1, buffers, offsets);
 
-            vkCmdDraw(command_buffers[i], 3, 1, 0, 0);
+            vkCmdBindDescriptorSets(
+                env->CommandBuffers[i],
+                VK_PIPELINE_BIND_POINT_GRAPHICS,
+                env->PipelineLayout,
+                0,
+                1,
+                &env->DescriptorSets[i],
+                0,
+                nullptr);
+
+            vkCmdDraw(env->CommandBuffers[i], 3, 1, 0, 0);
             
-            vkCmdEndRenderPass(command_buffers[i]);
+            vkCmdEndRenderPass(env->CommandBuffers[i]);
             
-            VkResult result = vkEndCommandBuffer(command_buffers[i]);
+            VkResult result = vkEndCommandBuffer(env->CommandBuffers[i]);
             if (result != VK_SUCCESS)
             {
                 return false;

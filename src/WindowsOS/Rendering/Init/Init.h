@@ -21,27 +21,25 @@ namespace Init
         VulkanConfig* config,
         VkInstance vulkan_handle,
         VkSurfaceKHR surface_handle,
-        QueueFamilySupport* queue_family_support,
+        QueueFamilyConfig* queue_family_config,
         SwapchainConfig* swapchain_config,
         VkPhysicalDevice* physical_device_handle);
 
     bool CreateLogicalDevice(
         VulkanConfig* config,
         VkPhysicalDevice physical_device_handle,
-        QueueFamilySupport* queue_family_support,    
+        QueueFamilyConfig* queue_family_config,    
         VkQueue* GraphicsQueue,
         VkQueue* PresentQueue,
         VkDevice* logical_device_handle);
-
+        
     bool CreateSwapchain(
-        VkDevice logical_device_handle,
-        VkSurfaceKHR surface_handle,
-        QueueFamilySupport* queue_family_support,
-        SwapchainConfig* swapchain_config,
-        VkImageView* image_views,
-        VkSwapchainKHR* swapchain_handle);
-
+        VulkanEnvironment* env,
+        QueueFamilyConfig* queue_family_config,
+        SwapchainConfig* swapchain_config);
+        
     bool CreatePipeline(
+        VulkanEnvironment* env,
         VkDevice logical_device_handle,
         SwapchainConfig* swapchain_config,
         VkRenderPass* render_pass_handle,
@@ -49,14 +47,9 @@ namespace Init
         VkDescriptorSetLayout* descriptor_set_layout);
         
     bool CreateCommandBuffers(
-        VkDevice logical_device_handle,
-        QueueFamilySupport* queue_family_support,
-        VkBuffer vertex_buffer,
-        VkPipeline pipeline_handle,
-        SwapchainConfig* swapchain_config,
-        VkRenderPass render_pass_handle,
-        VkImageView* image_views,
-        VkCommandBuffer* command_buffers);
+        VulkanEnvironment* env,
+        QueueFamilyConfig* queue_family_config,
+        SwapchainConfig* swapchain_config);
 
     bool CreateVKSemaphore(
         VkDevice logical_device_handle,

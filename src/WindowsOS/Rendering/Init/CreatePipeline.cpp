@@ -3,9 +3,7 @@
 
 namespace WindowsOS { namespace Rendering {
 namespace Init
-{
-    VkPipelineLayout PipelineLayout;
-    
+{    
     bool CreateRenderPass(
         VkDevice logical_device_handle,
         VkFormat format,
@@ -78,6 +76,7 @@ namespace Init
     }
     
     bool CreatePipeline(
+        VulkanEnvironment* env,
         VkDevice logical_device_handle,
         SwapchainConfig* swapchain_config,
         VkRenderPass* render_pass_handle,
@@ -251,8 +250,8 @@ namespace Init
 
         VkPipelineLayoutCreateInfo pipeline_layout_info{};
         pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipeline_layout_info.setLayoutCount = 0;//1;
-        pipeline_layout_info.pSetLayouts = nullptr;//descriptor_set_layouts;
+        pipeline_layout_info.setLayoutCount = 1;
+        pipeline_layout_info.pSetLayouts = descriptor_set_layouts;
         pipeline_layout_info.pushConstantRangeCount = 0; // Optional
         pipeline_layout_info.pPushConstantRanges = nullptr; // Optional
 
@@ -261,7 +260,7 @@ namespace Init
             logical_device_handle,
             &pipeline_layout_info,
             nullptr,
-            &PipelineLayout);
+            &env->PipelineLayout);
         if (result != VK_SUCCESS) return false;
 
         VkGraphicsPipelineCreateInfo pipeline_info = {};
@@ -276,7 +275,7 @@ namespace Init
         pipeline_info.pDepthStencilState = nullptr; // Optional
         pipeline_info.pColorBlendState = &color_blending;
         pipeline_info.pDynamicState = nullptr; // Optional
-        pipeline_info.layout = PipelineLayout;
+        pipeline_info.layout = env->PipelineLayout;
         pipeline_info.renderPass = *render_pass_handle;
         pipeline_info.subpass = 0;
         pipeline_info.basePipelineHandle = VK_NULL_HANDLE; // Optional
