@@ -3,11 +3,11 @@
 namespace WindowsOS { namespace Rendering {
 namespace Init
 {
-    QueueFamilies FindQueueFamilies(
+    QueueFamilySupport FindQueueFamilySupport(
         VkPhysicalDevice physical_device_handle, 
         VkSurfaceKHR surface_handle)
     {
-        QueueFamilies queue_families = {};
+        QueueFamilySupport queue_family_support = {};
         
         uint32 count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(
@@ -17,12 +17,12 @@ namespace Init
         
         if (count == 0)
         {
-            return queue_families;
+            return queue_family_support;
         }
         if (count > 10)
         {
             Error("[Error] More than len(buffer) queue families found.\n");
-            return queue_families;
+            return queue_family_support;
         }
         VkQueueFamilyProperties family_properties[10];
         vkGetPhysicalDeviceQueueFamilyProperties(
@@ -35,8 +35,8 @@ namespace Init
         {
             if (family_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
             {
-                queue_families.GraphicsAvailable = true;
-                queue_families.GraphicsIndex = i;
+                queue_family_support.GraphicsAvailable = true;
+                queue_family_support.GraphicsIndex = i;
             }
             VkBool32 present_support;
             vkGetPhysicalDeviceSurfaceSupportKHR(
@@ -46,12 +46,12 @@ namespace Init
                 &present_support);
             if (present_support)
             {
-                queue_families.PresentAvailable = true;
-                queue_families.PresentIndex = i;
+                queue_family_support.PresentAvailable = true;
+                queue_family_support.PresentIndex = i;
             }
         }
         
-        return queue_families;
+        return queue_family_support;
     }
     
     VkPresentModeKHR ChooseSwapPresentMode(VkPresentModeKHR* available_modes, int count)
@@ -199,7 +199,7 @@ namespace Init
         VulkanConfig* config,
         VkPhysicalDevice physical_device_handle,
         VkSurfaceKHR surface_handle,
-        QueueFamilies* queue_families,
+        QueueFamilySupport* queue_family_support,
         SwapchainConfig* swapchain_config)
     {
         VkPhysicalDeviceProperties properties;
@@ -208,8 +208,8 @@ namespace Init
         VkPhysicalDeviceFeatures features;
         vkGetPhysicalDeviceFeatures(physical_device_handle, &features);
         
-        *queue_families = FindQueueFamilies(physical_device_handle, surface_handle);
-        if (!queue_families->GraphicsAvailable || !queue_families->PresentAvailable)
+        *queue_family_support = FindQueueFamilySupport(physical_device_handle, surface_handle);
+        if (!queue_family_support->GraphicsAvailable || !queue_family_support->PresentAvailable)
         {
             return false;
         }
@@ -236,7 +236,7 @@ namespace Init
         VulkanConfig* config,
         VkInstance vulkan_handle,
         VkSurfaceKHR surface_handle,
-        QueueFamilies* queue_families,
+        QueueFamilySupport* queue_family_support,
         SwapchainConfig* swapchain_config, //out
         VkPhysicalDevice* physical_device_handle)
     {
@@ -262,7 +262,7 @@ namespace Init
                 config,
                 available_devices[i],
                 surface_handle,
-                queue_families,
+                queue_family_support,
                 swapchain_config);
             if (suitable)
             {

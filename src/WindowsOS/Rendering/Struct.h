@@ -7,11 +7,12 @@ namespace WindowsOS {
 namespace Rendering
 {
 
-    struct QueueFamilies
+    struct QueueFamilySupport
     {
-        bool GraphicsAvailable = false;
-        bool PresentAvailable = false;
+        bool GraphicsAvailable;
         int GraphicsIndex;
+        
+        bool PresentAvailable;
         int PresentIndex;
     };
 
@@ -27,15 +28,12 @@ namespace Rendering
     struct VulkanConfig
     {
         int ValidationLayersCount;
-        //char ValidationLayers[5][128];
         char** ValidationLayers;
 
         int VulkanExtensionsCount;
-        //char VulkanExtensions[5][128];
         char** VulkanExtensions;
         
         int DeviceExtensionsCount;
-        //char DeviceExtensions[5][128];
         char** DeviceExtensions;
     };
 }

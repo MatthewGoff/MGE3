@@ -40,11 +40,11 @@ namespace Init
     
     bool CreateCommandPool(
         VkDevice logical_device_handle,
-        QueueFamilies* queue_families)
+        QueueFamilySupport* queue_family_support)
     {
         VkCommandPoolCreateInfo pool_info = {};
         pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        pool_info.queueFamilyIndex = queue_families->GraphicsIndex;
+        pool_info.queueFamilyIndex = queue_family_support->GraphicsIndex;
         pool_info.flags = 0; // Optional
         
         VkResult result = vkCreateCommandPool(
@@ -61,7 +61,7 @@ namespace Init
         
     bool CreateCommandBuffers(
         VkDevice logical_device_handle,
-        QueueFamilies* queue_families,
+        QueueFamilySupport* queue_family_support,
         VkPipeline pipeline_handle,
         SwapchainConfig* swapchain_config,
         VkRenderPass render_pass_handle,
@@ -79,7 +79,7 @@ namespace Init
             return false;
         }
 
-        success = CreateCommandPool(logical_device_handle, queue_families);
+        success = CreateCommandPool(logical_device_handle, queue_family_support);
         if (!success)
         {
             Error("[Error] Failed to create command pool.\n");

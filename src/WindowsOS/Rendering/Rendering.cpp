@@ -11,7 +11,7 @@ namespace Rendering
     
     VkInstance hVulkan = VK_NULL_HANDLE;
     VkSurfaceKHR hSurface;
-    QueueFamilies QueueFamilies;
+    QueueFamilySupport QueueFamilySupport;
     VkPhysicalDevice hPhysicalDevice = VK_NULL_HANDLE; // remove this
     VkDevice hLogicalDevice;
     VkQueue GraphicsQueue;
@@ -145,7 +145,7 @@ namespace Rendering
             &config,
             hVulkan,
             hSurface,
-            &QueueFamilies,
+            &QueueFamilySupport,
             &SwapchainConfig,
             &hPhysicalDevice);
         if (!success)
@@ -157,7 +157,7 @@ namespace Rendering
         success = Init::CreateLogicalDevice(
             &config,
             hPhysicalDevice,
-            &QueueFamilies,    
+            &QueueFamilySupport,    
             &GraphicsQueue,
             &PresentQueue,
             &hLogicalDevice);
@@ -170,7 +170,7 @@ namespace Rendering
         success = Init::CreateSwapchain(
             hLogicalDevice,
             hSurface,
-            &QueueFamilies,
+            &QueueFamilySupport,
             &SwapchainConfig,
             ImageViews,
             &hSwapchain);
@@ -193,7 +193,7 @@ namespace Rendering
         
         success = Init::CreateCommandBuffers(
             hLogicalDevice,
-            &QueueFamilies,
+            &QueueFamilySupport,
             hPipeline,
             &SwapchainConfig,
             hRenderPass,

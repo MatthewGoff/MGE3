@@ -21,14 +21,14 @@ namespace Init
         VulkanConfig* config,
         VkInstance vulkan_handle,
         VkSurfaceKHR surface_handle,
-        QueueFamilies* queue_families,
+        QueueFamilySupport* queue_family_support,
         SwapchainConfig* swapchain_config,
         VkPhysicalDevice* physical_device_handle);
 
     bool CreateLogicalDevice(
         VulkanConfig* config,
         VkPhysicalDevice physical_device_handle,
-        QueueFamilies* queue_families,    
+        QueueFamilySupport* queue_family_support,    
         VkQueue* GraphicsQueue,
         VkQueue* PresentQueue,
         VkDevice* logical_device_handle);
@@ -36,7 +36,7 @@ namespace Init
     bool CreateSwapchain(
         VkDevice logical_device_handle,
         VkSurfaceKHR surface_handle,
-        QueueFamilies* queue_families,
+        QueueFamilySupport* queue_family_support,
         SwapchainConfig* swapchain_config,
         VkImageView* image_views,
         VkSwapchainKHR* swapchain_handle);
@@ -49,7 +49,7 @@ namespace Init
 
     bool CreateCommandBuffers(
         VkDevice logical_device_handle,
-        QueueFamilies* queue_families,
+        QueueFamilySupport* queue_family_support,
         VkPipeline pipeline_handle,
         SwapchainConfig* swapchain_config,
         VkRenderPass render_pass_handle,

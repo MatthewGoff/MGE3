@@ -75,7 +75,7 @@ namespace Init
     bool CreateSwapchain(
         VkDevice logical_device_handle,
         VkSurfaceKHR surface_handle,
-        QueueFamilies* queue_families,
+        QueueFamilySupport* queue_family_support,
         SwapchainConfig* swapchain_config,
         VkImageView* image_views,
         VkSwapchainKHR* swapchain_handle)
@@ -110,10 +110,10 @@ namespace Init
         createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         
         uint32 indices[] = {
-            (uint32)queue_families->GraphicsIndex,
-            (uint32)queue_families->PresentIndex};
+            (uint32)queue_family_support->GraphicsIndex,
+            (uint32)queue_family_support->PresentIndex};
         
-        if (queue_families->GraphicsIndex != queue_families->PresentIndex)
+        if (queue_family_support->GraphicsIndex != queue_family_support->PresentIndex)
         {
             createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
             createInfo.queueFamilyIndexCount = 2;
