@@ -24,6 +24,16 @@ namespace Rendering
     VkCommandBuffer CommandBuffers[20];
     VkSemaphore ImageAvailableSemaphore;
     VkSemaphore RenderFinishedSemaphore;
+    VkDescriptorSetLayout DescriptorSetLayout;
+    
+    VkBuffer VertexBuffer;
+    VkDeviceMemory VertexBufferMemory;
+
+    //VkBuffer StagingBuffer;
+    //VkDeviceMemory StagingBufferMemory;
+
+    VkBuffer UniformBuffers[2];
+    VkDeviceMemory UniformBuffersMemory[2];
 
     VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -31,13 +41,6 @@ namespace Rendering
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
         void* pUserData)
     {
-        /*
-        Docs:
-        VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT = 0x00000001,
-        VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT = 0x00000010,
-        VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT = 0x00000100,
-        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT = 0x00001000,
-        */
         switch(messageSeverity) {
             case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
                 Error("[Error] Validation layer: ");
@@ -67,10 +70,8 @@ namespace Rendering
 
     void GetDebugInfo(VkDebugUtilsMessengerCreateInfoEXT* debug_info)
     {
-        //true; // avoids editor fold bug
         *debug_info = {};
-        debug_info->sType =
-            VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        debug_info->sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
         debug_info->messageSeverity =
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
@@ -84,15 +85,10 @@ namespace Rendering
 
     void GetConfig(VulkanConfig* config)
     {
-        //true; // avoids editor fold bug
         *config = {};
         
         config->ValidationLayersCount = 1;
         config->ValidationLayers = new char*[] {"VK_LAYER_KHRONOS_validation"};
-        
-        //Util::MoveString(
-        //    config->ValidationLayers[0],
-        //    "VK_LAYER_KHRONOS_validation");
 
         config->VulkanExtensionsCount = 3;
         config->VulkanExtensions = new char*[] {
@@ -100,19 +96,178 @@ namespace Rendering
             "VK_KHR_win32_surface",
             "VK_EXT_debug_utils"
         };
-
-        //Util::MoveString(config->VulkanExtensions[0], "VK_KHR_surface");
-        //Util::MoveString(config->VulkanExtensions[1], "VK_KHR_win32_surface");
-        ///Util::MoveString(config->VulkanExtensions[2], "VK_EXT_debug_utils");
         
         config->DeviceExtensionsCount = 1;
         config->DeviceExtensions = new char*[] {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+        
+        config->SwapchainLength = 2;
+    }
+    
+    bool FindMemoryType(
+        VkPhysicalDevice physical_device,
+        uint32 typeFilter,
+        VkMemoryPropertyFlags properties,
+        uint32 &out)
+    {
+        VkPhysicalDeviceMemoryProperties memProperties;
+        vkGetPhysicalDeviceMemoryProperties(physical_device, &memProperties);
 
-        //Util::MoveString(
-        //    config->DeviceExtensions[0],
-        //    VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+        for (uint32 i = 0; i < memProperties.memoryTypeCount; i++)
+        {
+            if (
+                (typeFilter & (1 << i))
+                && ((memProperties.memoryTypes[i].propertyFlags & properties) == properties))
+            {
+                out = i;
+                return true;
+            }
+        }
+        
+        return false;
+        //for reference: "failed to find suitable memory type!"
     }
 
+    bool CreateDeviceBuffer(
+        VkDevice logical_device,
+        VkDeviceSize size,
+        VkBufferUsageFlags usage,
+        VkMemoryPropertyFlags properties,
+        VkBuffer* buffer,
+        VkDeviceMemory* buffer_memory)
+    {
+        VkBufferCreateInfo create_info = {};
+        create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        create_info.size = size;
+        create_info.usage = usage;
+        create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        
+        VkResult result = vkCreateBuffer(
+            logical_device,
+            &create_info,
+            nullptr,
+            buffer);
+        if (result != VK_SUCCESS)
+        {
+            return false;
+        }
+        
+        VkMemoryRequirements mem_requirements;
+        vkGetBufferMemoryRequirements(
+            logical_device,
+            *buffer,
+            &mem_requirements);
+        
+        uint32 memory_type;
+        bool success = FindMemoryType(hPhysicalDevice, mem_requirements.memoryTypeBits, properties, memory_type);
+        if (!success) {return false;}
+        
+        VkMemoryAllocateInfo alloc_info = {};
+        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        alloc_info.allocationSize = mem_requirements.size;
+        alloc_info.memoryTypeIndex = memory_type;
+        
+        // for reference: vkFreeMemory(logical_device, buffer_memory, nullptr)
+        result = vkAllocateMemory(
+            logical_device,
+            &alloc_info,
+            nullptr,
+            buffer_memory);
+        if (result != VK_SUCCESS)
+        {
+            return false;
+        }
+        
+        vkBindBufferMemory(logical_device, *buffer, *buffer_memory, 0);
+        
+        return true;
+    }
+
+    bool CreateVertexBuffer(
+        VkDevice logical_device,
+        VkBuffer* vertex_buffer,
+        VkDeviceMemory* vertex_buffer_memory)
+    {
+        Vertex vertices[] =
+        {
+            {{-0.5f, -0.5f}, {0.0f, 1.0f, 1.0f}},
+            {{0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+            {{-0.5f, 0.5f}, {1.0f, 0.0f, 1.0f}}
+        };
+        
+        int vertices_count = 3;
+        int vertices_size = vertices_count * sizeof(vertices[0]);
+                
+        bool success = CreateDeviceBuffer(
+            logical_device,
+            vertices_size,
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            vertex_buffer,
+            vertex_buffer_memory);
+        if (!success)
+        {
+            return false;
+        }
+        
+        void* data;
+        vkMapMemory(logical_device, *vertex_buffer_memory, 0, vertices_size, 0, &data);
+        memcpy(data, vertices, (size_t) vertices_size);
+        vkUnmapMemory(logical_device, *vertex_buffer_memory);
+
+        return true;
+    }
+
+#if false
+    bool CreateDescriptorSetLayout()
+    {
+        VkDescriptorSetLayoutBinding ubo_layout_binding = {};
+        ubo_layout_binding.binding = 0;
+        ubo_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        ubo_layout_binding.descriptorCount = 1;
+        ubo_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+        ubo_layout_binding.pImmutableSamplers = nullptr; // Optional
+
+        VkDescriptorSetLayoutCreateInfo layout_info = {};
+        layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layout_info.bindingCount = 1;
+        layout_info.pBindings = &ubo_layout_binding;
+        
+        VkResult = vkCreateDescriptorSetLayout(device, &layout_info, nullptr, &DescriptorSetLayout);
+        if (result != VK_SUCCESS)
+        {
+            return false;
+            // for reference: "failed to create descriptor set layout!"
+        }
+
+        return true;
+    }
+#endif
+#if false
+    bool CreateImage()
+    {
+        bool Engine::OpenBitmap(byte* mem, int mem_size, Bitmap* destination, int dest_size, char* path)
+        
+        LoadAsset(1);
+        int* pixels = GetAsset(1).Pixels;
+
+        CreateDeviceBuffer(
+            imageSize,
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            StagingBuffer,
+            StagingBufferMemory);
+
+        byte* pixels;
+        void* data;
+        vkMapMemory(device, stagingBufferMemory, 0, imageSize, 0, &data);
+        memcpy(data, pixels, static_cast<size_t>(imageSize));
+        vkUnmapMemory(device, stagingBufferMemory);
+        //Don’t forget to clean up the original pixel array now:
+        stbi_image_free(pixels);
+
+        return true;
+    }
+#endif
     bool initVulkan(HINSTANCE instance_handle, HWND window_handle)
     {
         VkDebugUtilsMessengerCreateInfoEXT debug_info; //Can forget after init
@@ -179,21 +334,37 @@ namespace Rendering
             Error("[Error] Failed to create swap chain.\n");
             return false;
         }
-
+#if false
+        success = CreateDescriptorSetLayout();
+        if (!success)
+        {
+            Error("[Error] Failed to create descriptor set layout.\n");
+            return false;
+        }
+#endif
         success = Init::CreatePipeline(
             hLogicalDevice,
             &SwapchainConfig,
             &hRenderPass,
-            &hPipeline);
+            &hPipeline,
+            &DescriptorSetLayout);
         if (!success)
         {
             Error("[Error] Failed to create graphics pipeline.\n");
             return false;
         }
         
+        success = CreateVertexBuffer(hLogicalDevice, &VertexBuffer, &VertexBufferMemory);
+        if (!success)
+        {
+            Error("[Error] Failed to create vertex buffer");
+            return false;
+        }
+
         success = Init::CreateCommandBuffers(
             hLogicalDevice,
             &QueueFamilySupport,
+            VertexBuffer,
             hPipeline,
             &SwapchainConfig,
             hRenderPass,
@@ -216,7 +387,14 @@ namespace Rendering
             Error("[Error] Failed to create semaphores.\n");
             return false;
         }
-        
+#if false
+        success = CreateImage()
+        if (!success)
+        {
+            Error("[Error] Failed to create Image.\n");
+            return false;
+        }
+#endif
         Info("[Info] Finished Vulkan initialization.\n");
         return true;
     }
@@ -287,6 +465,7 @@ namespace Rendering
         present_info.pResults = nullptr; // Optional
 
         vkQueuePresentKHR(PresentQueue, &present_info);
+        vkQueueWaitIdle(PresentQueue);
 
         return true;
     }

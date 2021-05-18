@@ -45,11 +45,13 @@ namespace Init
         VkDevice logical_device_handle,
         SwapchainConfig* swapchain_config,
         VkRenderPass* render_pass_handle,
-        VkPipeline* pipeline_handle);
-
+        VkPipeline* pipeline_handle,
+        VkDescriptorSetLayout* descriptor_set_layout);
+        
     bool CreateCommandBuffers(
         VkDevice logical_device_handle,
         QueueFamilySupport* queue_family_support,
+        VkBuffer vertex_buffer,
         VkPipeline pipeline_handle,
         SwapchainConfig* swapchain_config,
         VkRenderPass render_pass_handle,

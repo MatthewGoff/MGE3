@@ -54,19 +54,11 @@ namespace Init
         {
             VkExtent2D extent = {WINDOW_WIDTH, WINDOW_HEIGHT};
             
-            extent.width = Util::Min(
-                extent.width,
-                capabilities->maxImageExtent.width);
-            extent.width = Util::Max(
-                extent.width,
-                capabilities->minImageExtent.width);
+            extent.width = Util::Min(extent.width, capabilities->maxImageExtent.width);
+            extent.width = Util::Max(extent.width, capabilities->minImageExtent.width);
             
-            extent.height = Util::Min(
-                extent.height,
-                capabilities->maxImageExtent.height);
-            extent.height = Util::Max(
-                extent.height,
-                capabilities->minImageExtent.height);
+            extent.height = Util::Min(extent.height, capabilities->maxImageExtent.height);
+            extent.height = Util::Max(extent.height, capabilities->minImageExtent.height);
             
             return extent;
         }

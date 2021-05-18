@@ -4,7 +4,6 @@
 namespace WindowsOS { namespace Rendering {
 namespace Init
 {
-    
     VkPipelineLayout PipelineLayout;
     
     bool CreateRenderPass(
@@ -82,7 +81,8 @@ namespace Init
         VkDevice logical_device_handle,
         SwapchainConfig* swapchain_config,
         VkRenderPass* render_pass_handle,
-        VkPipeline* pipeline_handle)
+        VkPipeline* pipeline_handle,
+        VkDescriptorSetLayout* descriptor_set_layouts)
     {
         bool success = CreateRenderPass(
             logical_device_handle,
@@ -149,12 +149,19 @@ namespace Init
             vert_stage_info,
             frag_stage_info};
 
+        VkVertexInputBindingDescription binding_description = Vertex::BindingDescription();
+        VkVertexInputAttributeDescription attribute_descriptions[] =
+        {
+            Vertex::PositionDescription(),
+            Vertex::ColorDescription()
+        };
+
         VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
         vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertex_input_info.vertexBindingDescriptionCount = 0;
-        vertex_input_info.pVertexBindingDescriptions = nullptr; // Optional
-        vertex_input_info.vertexAttributeDescriptionCount = 0;
-        vertex_input_info.pVertexAttributeDescriptions = nullptr; // Optional
+        vertex_input_info.vertexBindingDescriptionCount = 1;
+        vertex_input_info.pVertexBindingDescriptions = &binding_description;
+        vertex_input_info.vertexAttributeDescriptionCount = 2;
+        vertex_input_info.pVertexAttributeDescriptions = attribute_descriptions;
 
         VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
         input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -244,11 +251,11 @@ namespace Init
 
         VkPipelineLayoutCreateInfo pipeline_layout_info{};
         pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipeline_layout_info.setLayoutCount = 0; // Optional
-        pipeline_layout_info.pSetLayouts = nullptr; // Optional
+        pipeline_layout_info.setLayoutCount = 0;//1;
+        pipeline_layout_info.pSetLayouts = nullptr;//descriptor_set_layouts;
         pipeline_layout_info.pushConstantRangeCount = 0; // Optional
         pipeline_layout_info.pPushConstantRanges = nullptr; // Optional
-        
+
         //VkResult result;
         result = vkCreatePipelineLayout(
             logical_device_handle,

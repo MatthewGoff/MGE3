@@ -62,6 +62,7 @@ namespace Init
     bool CreateCommandBuffers(
         VkDevice logical_device_handle,
         QueueFamilySupport* queue_family_support,
+        VkBuffer vertex_buffer,
         VkPipeline pipeline_handle,
         SwapchainConfig* swapchain_config,
         VkRenderPass render_pass_handle,
@@ -133,6 +134,10 @@ namespace Init
                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                 pipeline_handle);
             
+            VkBuffer buffers[] = {vertex_buffer};
+            VkDeviceSize offsets[] = {0};
+            vkCmdBindVertexBuffers(command_buffers[i], 0, 1, buffers, offsets);
+
             vkCmdDraw(command_buffers[i], 3, 1, 0, 0);
             
             vkCmdEndRenderPass(command_buffers[i]);
