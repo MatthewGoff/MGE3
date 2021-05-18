@@ -4,6 +4,9 @@ static Bitmap* asset_location[10]; // Maximum 10 assets
 
 void Engine::LoadAsset(int id)
 {
+    //Check that we haven't already loaded
+    if (asset_location[id] != nullptr) {return;}
+
     char path[128];
     Util::MoveString(path, "Assets\\x.bmp");
     path[7] = id + 48;
