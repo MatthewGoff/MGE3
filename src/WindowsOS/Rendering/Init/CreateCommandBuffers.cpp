@@ -8,11 +8,11 @@ namespace Init
         
     bool CreateFramebuffers(
         VkDevice logical_device_handle,
-        SwapchainMeta* swapchain_meta,
+        SwapchainConfig* swapchain_config,
         VkRenderPass render_pass_handle,
         VkImageView* image_views)
     {
-        for (int i = 0; i < swapchain_meta->Count; i++) {
+        for (int i = 0; i < swapchain_config->Size; i++) {
             VkImageView attachments[] = {image_views[i]};
 
             VkFramebufferCreateInfo framebuffer_info = {};
@@ -20,8 +20,8 @@ namespace Init
             framebuffer_info.renderPass = render_pass_handle;
             framebuffer_info.attachmentCount = 1;
             framebuffer_info.pAttachments = attachments;
-            framebuffer_info.width = swapchain_meta->Extent.width;
-            framebuffer_info.height = swapchain_meta->Extent.height;
+            framebuffer_info.width = swapchain_config->Extent.width;
+            framebuffer_info.height = swapchain_config->Extent.height;
             framebuffer_info.layers = 1;
 
             VkResult result = vkCreateFramebuffer(
@@ -63,14 +63,14 @@ namespace Init
         VkDevice logical_device_handle,
         QueueFamilies* queue_families,
         VkPipeline pipeline_handle,
-        SwapchainMeta* swapchain_meta,
+        SwapchainConfig* swapchain_config,
         VkRenderPass render_pass_handle,
         VkImageView* image_views,
         VkCommandBuffer* command_buffers)
     {
         bool success = CreateFramebuffers(
             logical_device_handle,
-            swapchain_meta,
+            swapchain_config,
             render_pass_handle,
             image_views);
         if (!success)
@@ -90,7 +90,7 @@ namespace Init
         alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         alloc_info.commandPool = CommandPool;
         alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        alloc_info.commandBufferCount = swapchain_meta->Count;
+        alloc_info.commandBufferCount = swapchain_config->Size;
 
         VkResult result = vkAllocateCommandBuffers(
             logical_device_handle,
@@ -101,7 +101,7 @@ namespace Init
             return false;
         }
         
-        for (int i = 0; i < swapchain_meta->Count; i++)
+        for (int i = 0; i < swapchain_config->Size; i++)
         {
             VkCommandBufferBeginInfo begin_info = {};
             begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -119,7 +119,7 @@ namespace Init
             render_pass_info.renderPass = render_pass_handle;
             render_pass_info.framebuffer = Framebuffers[i];
             render_pass_info.renderArea.offset = {0, 0};
-            render_pass_info.renderArea.extent = swapchain_meta->Extent;
+            render_pass_info.renderArea.extent = swapchain_config->Extent;
             VkClearValue clear_color = {0.0f, 0.0f, 0.0f, 1.0f};
             render_pass_info.clearValueCount = 1;
             render_pass_info.pClearValues = &clear_color;

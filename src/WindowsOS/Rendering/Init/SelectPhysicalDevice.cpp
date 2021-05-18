@@ -38,13 +38,13 @@ namespace Init
                 queue_families.GraphicsAvailable = true;
                 queue_families.GraphicsIndex = i;
             }
-            VkBool32 presentSupport;
+            VkBool32 present_support;
             vkGetPhysicalDeviceSurfaceSupportKHR(
                 physical_device_handle,
                 i,
                 surface_handle,
-                &presentSupport);
-            if (presentSupport)
+                &present_support);
+            if (present_support)
             {
                 queue_families.PresentAvailable = true;
                 queue_families.PresentIndex = i;
@@ -54,19 +54,49 @@ namespace Init
         return queue_families;
     }
     
+    VkPresentModeKHR ChooseSwapPresentMode(VkPresentModeKHR* available_modes, int count)
+    {
+        for (int i = 0; i < count; i++)
+        {
+            VkPresentModeKHR mode = *(available_modes + i);
+            if (mode == VK_PRESENT_MODE_MAILBOX_KHR)
+            {
+                return mode;
+            }
+        }
+        
+        return VK_PRESENT_MODE_FIFO_KHR;
+    }
+    
+    VkSurfaceFormatKHR ChooseSwapSurfaceFormat(VkSurfaceFormatKHR* available_formats, int count)
+    {
+        Assert(count!=0);
+        for (int i = 0; i < count; i++) {
+            VkSurfaceFormatKHR* format = (available_formats + i);
+            if (format->format == VK_FORMAT_B8G8R8A8_SRGB &&
+                format->colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+            {
+                return *format;
+            }
+        }
+        
+        // First element of array is returned by default
+        return *available_formats;
+    }
+    
     /*
     Return false if failed to complete or if swapchain support is inssuficient.
     */
     bool DetermineSwapchainSupport(
-        VkPhysicalDevice physical_device_handle,
-        VkSurfaceKHR surface_handle,
-        SwapchainSupport* swapchain_support)
+        VkPhysicalDevice physical_device_handle, // in
+        VkSurfaceKHR surface_handle, // in
+        SwapchainConfig* swapchain_config) // out
     {
-        *swapchain_support = {};
+        *swapchain_config = {};
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
             physical_device_handle,
             surface_handle,
-            &swapchain_support->Capabilities);
+            &swapchain_config->Capabilities);
 
         uint32 count;
         vkGetPhysicalDeviceSurfaceFormatsKHR(
@@ -80,12 +110,14 @@ namespace Init
             return false;
         }
         
+        VkSurfaceFormatKHR available_formats[20];
         vkGetPhysicalDeviceSurfaceFormatsKHR(
             physical_device_handle,
             surface_handle,
             &count,
-            swapchain_support->Formats);
-        swapchain_support->FormatsCount = count;
+            available_formats);
+        
+        swapchain_config->SurfaceFormat = ChooseSwapSurfaceFormat(available_formats, count);
 
         count = 0;
         vkGetPhysicalDeviceSurfacePresentModesKHR(
@@ -99,25 +131,19 @@ namespace Init
             return false;
         }
 
+        VkPresentModeKHR available_modes[20];
         vkGetPhysicalDeviceSurfacePresentModesKHR(
             physical_device_handle,
             surface_handle,
             &count,
-            swapchain_support->PresentModes);
-        swapchain_support->PresentModesCount = count;
-
-        /*
-        Check for swapchain being addequate: (or another function)
-        swapChainAdequate = !swapChainSupport.formats.empty() &&
-        !swapChainSupport.presentModes.empty();
-        */
+            available_modes);
+                    
+        swapchain_config->PresentMode = ChooseSwapPresentMode(available_modes, count);
         
         return true;
     }
     
-    bool DeviceSupportsExtensions(
-        VkConfig* config,
-        VkPhysicalDevice physical_device_handle)
+    bool DeviceSupportsExtensions(VulkanConfig* config, VkPhysicalDevice physical_device_handle)
     {
         uint32 count;
         vkEnumerateDeviceExtensionProperties(
@@ -170,11 +196,11 @@ namespace Init
     }
 
     bool SuitableDevice(
-        VkConfig* config,
+        VulkanConfig* config,
         VkPhysicalDevice physical_device_handle,
         VkSurfaceKHR surface_handle,
         QueueFamilies* queue_families,
-        SwapchainSupport* swapchain_support)
+        SwapchainConfig* swapchain_config)
     {
         VkPhysicalDeviceProperties properties;
         vkGetPhysicalDeviceProperties(physical_device_handle, &properties);
@@ -182,19 +208,13 @@ namespace Init
         VkPhysicalDeviceFeatures features;
         vkGetPhysicalDeviceFeatures(physical_device_handle, &features);
         
-        *queue_families = FindQueueFamilies(
-            physical_device_handle,
-            surface_handle);
-        if (
-            !queue_families->GraphicsAvailable ||
-            !queue_families->PresentAvailable)
+        *queue_families = FindQueueFamilies(physical_device_handle, surface_handle);
+        if (!queue_families->GraphicsAvailable || !queue_families->PresentAvailable)
         {
             return false;
         }
         
-        bool extension_support = DeviceSupportsExtensions(
-            config,
-            physical_device_handle);
+        bool extension_support = DeviceSupportsExtensions(config, physical_device_handle);
         if (!extension_support)
         {
             return false;
@@ -203,7 +223,7 @@ namespace Init
         bool swap_chain_support = DetermineSwapchainSupport(
             physical_device_handle,
             surface_handle,
-            swapchain_support);
+            swapchain_config);
         if (!swap_chain_support)
         {
             return false;
@@ -213,11 +233,11 @@ namespace Init
     }
     
     bool SelectPhysicalDevice(
-        VkConfig* config,
+        VulkanConfig* config,
         VkInstance vulkan_handle,
         VkSurfaceKHR surface_handle,
         QueueFamilies* queue_families,
-        SwapchainSupport* swapchain_support,
+        SwapchainConfig* swapchain_config, //out
         VkPhysicalDevice* physical_device_handle)
     {
         uint32 count = 0;
@@ -243,7 +263,7 @@ namespace Init
                 available_devices[i],
                 surface_handle,
                 queue_families,
-                swapchain_support);
+                swapchain_config);
             if (suitable)
             {
                 *physical_device_handle = available_devices[i];

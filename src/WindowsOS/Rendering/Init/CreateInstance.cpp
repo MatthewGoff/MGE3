@@ -6,7 +6,7 @@ namespace Init
 {
     bool SetupDebugMessenger(
         VkInstance vulkan_handle,
-        VkConfig* config,
+        VulkanConfig* config,
         VkDebugUtilsMessengerCreateInfoEXT* debug_info)
     {
         if (config->ValidationLayersCount == 0) return true;
@@ -39,7 +39,7 @@ namespace Init
         return true;
     }
 
-    bool ValidationLayersSupported(VkConfig* config)
+    bool ValidationLayersSupported(VulkanConfig* config)
     {
         uint32 count;
         vkEnumerateInstanceLayerProperties(&count, nullptr);
@@ -83,7 +83,7 @@ namespace Init
     }
 
     bool CreateInstance(
-        VkConfig* config,
+        VulkanConfig* config,
         VkDebugUtilsMessengerCreateInfoEXT* debug_info,
         VkInstance* vulkan_handle)
     {

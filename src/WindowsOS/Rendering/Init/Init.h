@@ -7,7 +7,7 @@ namespace WindowsOS { namespace Rendering {
 namespace Init
 {
     bool CreateInstance(
-        VkConfig* config,
+        VulkanConfig* config,
         VkDebugUtilsMessengerCreateInfoEXT* debug_info,
         VkInstance* vulkan_handle);
 
@@ -18,15 +18,15 @@ namespace Init
         VkSurfaceKHR* surface_handle);
 
     bool SelectPhysicalDevice(
-        VkConfig* config,
+        VulkanConfig* config,
         VkInstance vulkan_handle,
         VkSurfaceKHR surface_handle,
         QueueFamilies* queue_families,
-        SwapchainSupport* swapchain_support,
+        SwapchainConfig* swapchain_config,
         VkPhysicalDevice* physical_device_handle);
 
     bool CreateLogicalDevice(
-        VkConfig* config,
+        VulkanConfig* config,
         VkPhysicalDevice physical_device_handle,
         QueueFamilies* queue_families,    
         VkQueue* GraphicsQueue,
@@ -37,14 +37,13 @@ namespace Init
         VkDevice logical_device_handle,
         VkSurfaceKHR surface_handle,
         QueueFamilies* queue_families,
-        SwapchainSupport* swapchain_support,
-        SwapchainMeta* swapchain_meta,
+        SwapchainConfig* swapchain_config,
         VkImageView* image_views,
         VkSwapchainKHR* swapchain_handle);
 
     bool CreatePipeline(
         VkDevice logical_device_handle,
-        SwapchainMeta* swapchain_meta,
+        SwapchainConfig* swapchain_config,
         VkRenderPass* render_pass_handle,
         VkPipeline* pipeline_handle);
 
@@ -52,7 +51,7 @@ namespace Init
         VkDevice logical_device_handle,
         QueueFamilies* queue_families,
         VkPipeline pipeline_handle,
-        SwapchainMeta* swapchain_meta,
+        SwapchainConfig* swapchain_config,
         VkRenderPass render_pass_handle,
         VkImageView* image_views,
         VkCommandBuffer* command_buffers);

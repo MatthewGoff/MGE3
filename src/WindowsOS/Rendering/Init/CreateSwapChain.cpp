@@ -6,7 +6,7 @@ namespace Init
     bool CreateImageViews(
         VkDevice logical_device_handle,
         int count,
-        SwapchainMeta* swapchain_meta,
+        SwapchainConfig* swapchain_config,
         VkImage* images,
         VkImageView* image_views)
     {
@@ -16,7 +16,7 @@ namespace Init
             createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
             createInfo.image = *(images + i);
             createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            createInfo.format = swapchain_meta->Format;
+            createInfo.format = swapchain_config->SurfaceFormat.format;
             
             createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
             createInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -43,23 +43,7 @@ namespace Init
         
         return true;
     }
-    
-    VkPresentModeKHR ChooseSwapPresentMode(
-        VkPresentModeKHR* available_present_modes,
-        int count)
-    {
-        for (int i = 0; i < count; i++)
-        {
-            VkPresentModeKHR available_present_mode = *(available_present_modes + i);
-            if (available_present_mode == VK_PRESENT_MODE_MAILBOX_KHR)
-            {
-                return available_present_mode;
-            }
-        }
-        
-        return VK_PRESENT_MODE_FIFO_KHR;
-    }
-    
+
     VkExtent2D ChooseSwapExtent(VkSurfaceCapabilitiesKHR* capabilities)
     {
         if (capabilities->currentExtent.width != UINT32_MAX)
@@ -88,49 +72,25 @@ namespace Init
         }
     }
 
-    VkSurfaceFormatKHR ChooseSwapSurfaceFormat(
-        VkSurfaceFormatKHR* available_formats,
-        int count)
-    {
-        Assert(count!=0);
-        for (int i = 0; i < count; i++) {
-            VkSurfaceFormatKHR* available_format = (available_formats + i);
-            if (available_format->format == VK_FORMAT_B8G8R8A8_SRGB &&
-                available_format->colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-            {
-                return *available_format;
-            }
-        }
-        
-        // First element of array is returned by default
-        return *available_formats;
-    }
-        
     bool CreateSwapchain(
         VkDevice logical_device_handle,
         VkSurfaceKHR surface_handle,
         QueueFamilies* queue_families,
-        SwapchainSupport* swapchain_support,
-        SwapchainMeta* swapchain_meta,
+        SwapchainConfig* swapchain_config,
         VkImageView* image_views,
         VkSwapchainKHR* swapchain_handle)
     {
-        VkSurfaceFormatKHR surface_format = ChooseSwapSurfaceFormat(
-            swapchain_support->Formats,
-            swapchain_support->FormatsCount);
-        VkPresentModeKHR present_mode = ChooseSwapPresentMode(
-            swapchain_support->PresentModes,
-            swapchain_support->PresentModesCount);
-        VkExtent2D extent = ChooseSwapExtent(&swapchain_support->Capabilities);
+        VkSurfaceFormatKHR surface_format = swapchain_config->SurfaceFormat;
+        VkPresentModeKHR present_mode = swapchain_config->PresentMode;
+
+        VkExtent2D extent = ChooseSwapExtent(&swapchain_config->Capabilities);
         
-        uint32 image_count = swapchain_support->Capabilities.minImageCount + 1;
+        uint32 image_count = swapchain_config->Capabilities.minImageCount + 1;
         
         // 0 is a reserved value indicating there is no maximum
-        if (swapchain_support->Capabilities.maxImageCount != 0)
+        if (swapchain_config->Capabilities.maxImageCount != 0)
         {
-            image_count = Util::Min(
-                image_count,
-                swapchain_support->Capabilities.maxImageCount);
+            image_count = Util::Min(image_count, swapchain_config->Capabilities.maxImageCount);
         }
         
         if (image_count > 20)
@@ -166,8 +126,7 @@ namespace Init
             createInfo.pQueueFamilyIndices = nullptr; // Optional
         }
 
-        createInfo.preTransform =
-            swapchain_support->Capabilities.currentTransform;
+        createInfo.preTransform = swapchain_config->Capabilities.currentTransform;
         createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
         createInfo.presentMode = present_mode;
         createInfo.clipped = VK_TRUE;
@@ -199,14 +158,14 @@ namespace Init
                 swapchain_images);
         }
         
-        swapchain_meta->Format = surface_format.format;
-        swapchain_meta->Extent = extent;
-        swapchain_meta->Count = image_count;
-        
+        swapchain_config->SurfaceFormat = surface_format;
+        swapchain_config->Extent = extent;
+        swapchain_config->Size = image_count;
+
         bool success = CreateImageViews(
             logical_device_handle,
             image_count,
-            swapchain_meta,
+            swapchain_config,
             swapchain_images,
             image_views);
         if (!success)

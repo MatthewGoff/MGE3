@@ -4,7 +4,7 @@ namespace WindowsOS { namespace Rendering {
 namespace Init
 {
     bool CreateLogicalDevice(
-        VkConfig* config,
+        VulkanConfig* config,
         VkPhysicalDevice physical_device_handle,
         QueueFamilies* queue_families,    
         VkQueue* GraphicsQueue,

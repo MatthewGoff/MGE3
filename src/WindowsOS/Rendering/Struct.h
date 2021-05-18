@@ -15,23 +15,16 @@ namespace Rendering
         int PresentIndex;
     };
 
-    struct SwapchainSupport
+    struct SwapchainConfig
     {
         VkSurfaceCapabilitiesKHR Capabilities;
-        int FormatsCount;
-        VkSurfaceFormatKHR Formats[20];
-        int PresentModesCount;
-        VkPresentModeKHR PresentModes[20];
-    };
-
-    struct SwapchainMeta
-    {
-        VkFormat Format;
+        VkSurfaceFormatKHR SurfaceFormat;
+        VkPresentModeKHR PresentMode;
         VkExtent2D Extent;
-        int Count;
+        int Size;
     };
 
-    struct VkConfig
+    struct VulkanConfig
     {
         int ValidationLayersCount;
         //char ValidationLayers[5][128];

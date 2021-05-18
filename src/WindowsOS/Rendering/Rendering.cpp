@@ -17,9 +17,8 @@ namespace Rendering
     VkQueue GraphicsQueue;
     VkQueue PresentQueue;
     VkSwapchainKHR hSwapchain;
-    SwapchainSupport SwapchainSupport;
+    SwapchainConfig SwapchainConfig;
     VkImageView ImageViews[20];
-    SwapchainMeta SwapchainMeta;
     VkRenderPass hRenderPass;
     VkPipeline hPipeline;
     VkCommandBuffer CommandBuffers[20];
@@ -83,7 +82,7 @@ namespace Rendering
         debug_info->pfnUserCallback = DebugCallback;
     }
 
-    void GetConfig(VkConfig* config)
+    void GetConfig(VulkanConfig* config)
     {
         //true; // avoids editor fold bug
         *config = {};
@@ -119,7 +118,7 @@ namespace Rendering
         VkDebugUtilsMessengerCreateInfoEXT debug_info; //Can forget after init
         GetDebugInfo(&debug_info);
 
-        VkConfig config;
+        VulkanConfig config;
         GetConfig(&config);
 
         bool success;
@@ -147,7 +146,7 @@ namespace Rendering
             hVulkan,
             hSurface,
             &QueueFamilies,
-            &SwapchainSupport,
+            &SwapchainConfig,
             &hPhysicalDevice);
         if (!success)
         {
@@ -172,8 +171,7 @@ namespace Rendering
             hLogicalDevice,
             hSurface,
             &QueueFamilies,
-            &SwapchainSupport,
-            &SwapchainMeta,
+            &SwapchainConfig,
             ImageViews,
             &hSwapchain);
         if (!success)
@@ -184,7 +182,7 @@ namespace Rendering
 
         success = Init::CreatePipeline(
             hLogicalDevice,
-            &SwapchainMeta,
+            &SwapchainConfig,
             &hRenderPass,
             &hPipeline);
         if (!success)
@@ -197,7 +195,7 @@ namespace Rendering
             hLogicalDevice,
             &QueueFamilies,
             hPipeline,
-            &SwapchainMeta,
+            &SwapchainConfig,
             hRenderPass,
             ImageViews,
             CommandBuffers);
@@ -208,7 +206,7 @@ namespace Rendering
         }
 
         success = Init::CreateVKSemaphore(
-            hLogicalDevice,
+             hLogicalDevice,
             &ImageAvailableSemaphore);
         success = success && Init::CreateVKSemaphore(
             hLogicalDevice,
