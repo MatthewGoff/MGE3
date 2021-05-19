@@ -152,14 +152,15 @@ namespace Init
         VkVertexInputAttributeDescription attribute_descriptions[] =
         {
             Vertex::PositionDescription(),
-            Vertex::ColorDescription()
+            Vertex::ColorDescription(),
+            Vertex::TextureDescription()
         };
 
         VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
         vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertex_input_info.vertexBindingDescriptionCount = 1;
         vertex_input_info.pVertexBindingDescriptions = &binding_description;
-        vertex_input_info.vertexAttributeDescriptionCount = 2;
+        vertex_input_info.vertexAttributeDescriptionCount = 3;
         vertex_input_info.pVertexAttributeDescriptions = attribute_descriptions;
 
         VkPipelineInputAssemblyStateCreateInfo input_assembly = {};

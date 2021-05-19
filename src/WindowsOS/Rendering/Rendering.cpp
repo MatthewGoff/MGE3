@@ -195,7 +195,7 @@ namespace Rendering
         
         void* data;
         vkMapMemory(logical_device, *vertex_buffer_memory, 0, vertices_size, 0, &data);
-        memcpy(data, vertices, (size_t) vertices_size);
+        memcpy(data, vertices, vertices_size);
         vkUnmapMemory(logical_device, *vertex_buffer_memory);
 
         return true;
