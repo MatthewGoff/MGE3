@@ -208,6 +208,11 @@ namespace Init
         VkPhysicalDeviceFeatures features;
         vkGetPhysicalDeviceFeatures(physical_device_handle, &features);
         
+        if (!features.samplerAnisotropy)
+        {
+            return false;
+        }
+
         *queue_family_config = FindQueueFamilyConfig(physical_device_handle, surface_handle);
         if (!queue_family_config->GraphicsAvailable || !queue_family_config->PresentAvailable)
         {

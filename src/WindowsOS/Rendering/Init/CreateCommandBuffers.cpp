@@ -30,27 +30,6 @@ namespace Init
         
         return true;
     }
-    
-    bool CreateCommandPool(
-        VulkanEnvironment* env,
-        QueueFamilyConfig* queue_family_config)
-    {
-        VkCommandPoolCreateInfo pool_info = {};
-        pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        pool_info.queueFamilyIndex = queue_family_config->GraphicsIndex;
-        pool_info.flags = 0; // Optional
-        
-        VkResult result = vkCreateCommandPool(
-            env->LogicalDevice,
-            &pool_info,
-            nullptr,
-            &env->CommandPool);
-        if (result != VK_SUCCESS) {
-            return false;
-        }
-
-        return true;
-    }
         
     bool CreateCommandBuffers(
         VulkanEnvironment* env,
@@ -61,13 +40,6 @@ namespace Init
         if (!success)
         {
             Error("[Error] Failed to create framebuffers.\n");
-            return false;
-        }
-
-        success = CreateCommandPool(env, queue_family_config);
-        if (!success)
-        {
-            Error("[Error] Failed to create command pool.\n");
             return false;
         }
 

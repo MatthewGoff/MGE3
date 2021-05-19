@@ -17,6 +17,7 @@ namespace Rendering
     {
         Vector::float2 Position;
         Vector::float3 Color;
+        Vector::float2 TexCoord;
         
         static VkVertexInputBindingDescription BindingDescription()
         {
@@ -53,6 +54,19 @@ namespace Rendering
             
             return description;
         }
+        
+        static VkVertexInputAttributeDescription TextureDescription()
+        {
+            VkVertexInputAttributeDescription description = {};
+
+            description.binding = 0;
+            description.location = 2;
+            description.format = VK_FORMAT_R32G32_SFLOAT;
+            description.offset = offsetof(Vertex, TexCoord);
+            
+            return description;
+        }
+
     };
     
     struct QueueFamilyConfig
@@ -93,7 +107,7 @@ namespace Rendering
         QueueFamilyConfig QueueFamilyConfig;
         SwapchainConfig SwapchainConfig;
         
-        // Vulkan Objects (notice "Vk" prefix)
+        // Vulkan objects (notice "Vk" prefix)
         VkInstance Instance;
         VkSurfaceKHR Surface;
         VkPhysicalDevice PhysicalDevice;
@@ -113,8 +127,14 @@ namespace Rendering
         VkDescriptorPool DescriptorPool;
 
         VkBuffer VertexBuffer;
-        VkDeviceMemory VertexBufferMemory;        
+        VkDeviceMemory VertexBufferMemory;
         
+        VkImage Texture;
+        VkImageView TextureView;
+        VkDeviceMemory TextureMemory;
+        VkSampler TextureSampler;
+       
+        // Objects with one instance per swapchain image
         VkImage Images[SwapchainConfig::MAX_SIZE];
         VkImageView ImageViews[SwapchainConfig::MAX_SIZE];
         VkFramebuffer Framebuffers[SwapchainConfig::MAX_SIZE];
