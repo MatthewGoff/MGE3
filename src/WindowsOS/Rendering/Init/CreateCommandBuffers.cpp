@@ -105,7 +105,7 @@ namespace Init
                 0,
                 nullptr);
 
-            vkCmdDraw(env->CommandBuffers[i], 3, 1, 0, 0);
+            vkCmdDraw(env->CommandBuffers[i], 6, 1, 0, 0);
             
             vkCmdEndRenderPass(env->CommandBuffers[i]);
             

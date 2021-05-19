@@ -173,12 +173,16 @@ namespace Rendering
     {
         Vertex vertices[] =
         {
-            {{-0.5f, -0.5f}, {0.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-            {{0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f}},
-            {{-0.5f, 0.5f}, {1.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}
+            {{0.5f, 0.5f}, {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}, // bottom right
+            {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}}, // bottom left
+            {{-0.5f, -0.5f}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}}, // top left
+            
+            {{-0.5f, -0.5f}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}}, // top left
+            {{0.5f, -0.5f}, {0.0f, 1.0f, 1.0f}, {1.0f, 0.0f}}, // top right
+            {{0.5f, 0.5f}, {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f}} // bottom right
         };
         
-        int vertices_count = 3;
+        int vertices_count = 6;
         int vertices_size = vertices_count * sizeof(vertices[0]);
                 
         bool success = CreateDeviceBuffer(
@@ -576,8 +580,8 @@ namespace Rendering
         sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
         sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
         sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        sampler_info.anisotropyEnable = VK_FALSE;//VK_TRUE;
-        sampler_info.maxAnisotropy = 1;//16;
+        sampler_info.anisotropyEnable = VK_TRUE;
+        sampler_info.maxAnisotropy = 16;
         sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
         sampler_info.unnormalizedCoordinates = VK_FALSE;
         sampler_info.compareEnable = VK_FALSE;
@@ -774,8 +778,8 @@ namespace Rendering
     {
         UniformBufferObject ubo = {};
 
-        ubo.CameraPosition = {0.1, 0.1};
-        ubo.CameraDimensions = {0.1, 0.1};
+        ubo.CameraPosition = {0.0, 0.0};//{0.1, 0.1};
+        ubo.CameraDimensions = {0.0, 0.0};//{0.1, 0.1};
         
         void* data;
         vkMapMemory(
