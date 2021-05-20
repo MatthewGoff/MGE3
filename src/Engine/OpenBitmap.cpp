@@ -46,15 +46,20 @@ bool DecodeBitmap(byte* input, int input_size, Bitmap* output, int output_size)
             int* from = (int*)(input + data_offset + (x * bytes_per_pixel) + ((height - y) * stride));
             int* to = (int*)output->Pixels + x + (y * width);
             
+            int pixel = *from;
+            
+            int red = (pixel >> 16) & 0xFF;
+            int blue = pixel & 0xFF;
+            pixel = pixel & 0xFF00FF00;
+            pixel = pixel | (blue << 16) | red;
+            
             if (bytes_per_pixel == 3)
             {
                 // If image did not use an alpha channel we will assume opacity
-                *to = *from | 0xFF000000;
+                pixel = pixel | 0xFF000000;
             }
-            else
-            {
-                *to = *from;
-            }
+            
+            *to = pixel;
         }
     }
     

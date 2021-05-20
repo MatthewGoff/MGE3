@@ -108,7 +108,6 @@ namespace Rendering
     }
 
     bool CreateDeviceBuffer(
-        VkDevice logical_device,
         VkDeviceSize size,
         VkBufferUsageFlags usage,
         VkMemoryPropertyFlags properties,
@@ -122,7 +121,7 @@ namespace Rendering
         create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         
         VkResult result = vkCreateBuffer(
-            logical_device,
+            Environment.LogicalDevice,
             &create_info,
             nullptr,
             buffer);
@@ -133,7 +132,7 @@ namespace Rendering
         
         VkMemoryRequirements mem_requirements;
         vkGetBufferMemoryRequirements(
-            logical_device,
+            Environment.LogicalDevice,
             *buffer,
             &mem_requirements);
         
@@ -152,7 +151,7 @@ namespace Rendering
         
         // for reference: vkFreeMemory(logical_device, buffer_memory, nullptr)
         result = vkAllocateMemory(
-            logical_device,
+            Environment.LogicalDevice,
             &alloc_info,
             nullptr,
             buffer_memory);
@@ -161,7 +160,11 @@ namespace Rendering
             return false;
         }
         
-        vkBindBufferMemory(logical_device, *buffer, *buffer_memory, 0);
+        result = vkBindBufferMemory(Environment.LogicalDevice, *buffer, *buffer_memory, 0);
+        if (result != VK_SUCCESS)
+        {
+            return false;
+        }
         
         return true;
     }
@@ -186,7 +189,6 @@ namespace Rendering
         int vertices_size = vertices_count * sizeof(vertices[0]);
                 
         bool success = CreateDeviceBuffer(
-            logical_device,
             vertices_size,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -212,7 +214,6 @@ namespace Rendering
         for (int i = 0; i < Environment.SwapchainConfig.Size; i++)
         {
             bool success = CreateDeviceBuffer(
-                env->LogicalDevice,
                 bufferSize,
                 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -438,18 +439,28 @@ namespace Rendering
         VkPipelineStageFlags sourceStage;
         VkPipelineStageFlags destinationStage;
 
-        if (oldLayout == VK_IMAGE_LAYOUT_PREINITIALIZED
+        if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED
+            && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+        {
+            barrier.srcAccessMask = 0;
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+            destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        }
+        else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
             && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
         {
-            barrier.srcAccessMask = VK_ACCESS_HOST_WRITE_BIT;
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-            
-            sourceStage = VK_PIPELINE_STAGE_HOST_BIT;
+
+            sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
             destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
         }
         else
         {
-            *(int*)0 = 0;
+            Error("[Error] Failed to change image format on graphics device.\n");
+            return;
         }
 
         vkCmdPipelineBarrier(
@@ -466,9 +477,9 @@ namespace Rendering
 
         EndSingleTimeCommands(commandBuffer);
     }
+
     // Used in tutorial to move data from staging buffers to device optimal buffers.
-    void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize
-    size)
+    void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
     {
         VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
 
@@ -479,8 +490,34 @@ namespace Rendering
         EndSingleTimeCommands(commandBuffer);
     }
 
+    void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32 width, uint32 height) {
+        VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
+
+        VkBufferImageCopy region = {};
+        region.bufferOffset = 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = 0;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+        region.imageOffset = {0, 0, 0};
+        region.imageExtent = {width, height, 1};
+
+        vkCmdCopyBufferToImage(
+            commandBuffer,
+            buffer,
+            image,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1,
+            &region);
+
+        EndSingleTimeCommands(commandBuffer);
+    }
+    
     bool CreateImage(VulkanEnvironment* env, Bitmap* bitmap)
     {
+        // Part 1: Create Vulkan Image object        
         VkImageCreateInfo image_info = {};
         image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         image_info.imageType = VK_IMAGE_TYPE_2D;
@@ -490,9 +527,9 @@ namespace Rendering
         image_info.mipLevels = 1;
         image_info.arrayLayers = 1;
         image_info.format = VK_FORMAT_R8G8B8A8_SRGB;
-        image_info.tiling = VK_IMAGE_TILING_LINEAR;
-        image_info.initialLayout = VK_IMAGE_LAYOUT_PREINITIALIZED;
-        image_info.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+        image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+        image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
         image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         image_info.samples = VK_SAMPLE_COUNT_1_BIT;
         image_info.flags = 0; // Optional
@@ -511,13 +548,13 @@ namespace Rendering
         bool success = FindMemoryType(
             Environment.PhysicalDevice,
             memory_requirements.memoryTypeBits,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
             memory_type);
         if (!success)
         {
             return false;
         }
-                    
+    
         VkMemoryAllocateInfo alloc_info = {};
         alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         alloc_info.allocationSize = memory_requirements.size;
@@ -534,22 +571,48 @@ namespace Rendering
             // for reference: "failed to allocate image memory"
         }
         
-        result = vkBindImageMemory(
-            env->LogicalDevice,
-            env->Texture,
-            env->TextureMemory,
-            0);
+        result = vkBindImageMemory(env->LogicalDevice, env->Texture, env->TextureMemory, 0);
+        if (result != VK_SUCCESS)
+        {
+            return false;
+        }
+
+        // Part 2: Move memory to device
         
-		void *data;
-		vkMapMemory(env->LogicalDevice, env->TextureMemory, 0, memory_requirements.size, 0, &data);
-		memcpy(data, bitmap->Pixels, memory_requirements.size);
-		vkUnmapMemory(env->LogicalDevice, env->TextureMemory);
+        int image_size = memory_requirements.size;
+        
+        VkBuffer stagingBuffer;
+        VkDeviceMemory stagingBufferMemory;
+        
+        CreateDeviceBuffer(
+            image_size,
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            &stagingBuffer,
+            &stagingBufferMemory);
+
+        void* data;
+        vkMapMemory(env->LogicalDevice, stagingBufferMemory, 0, image_size, 0, &data);
+        memcpy(data, bitmap->Pixels, (uint32)image_size);
+        vkUnmapMemory(env->LogicalDevice, stagingBufferMemory);
 
         TransitionImageLayout(
             env->Texture,
             VK_FORMAT_R8G8B8A8_SRGB,
-            VK_IMAGE_LAYOUT_PREINITIALIZED,
+            VK_IMAGE_LAYOUT_UNDEFINED,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        CopyBufferToImage(
+            stagingBuffer,
+            env->Texture,
+            (uint32)bitmap->Width,
+            (uint32)bitmap->Height);
+        TransitionImageLayout(
+            env->Texture,
+            VK_FORMAT_R8G8B8A8_SRGB,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        
+        // End part 2
         
         VkImageViewCreateInfo view_info = {};
         view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -573,6 +636,9 @@ namespace Rendering
             // for reference: "failed to create texture image view"
         }
 
+        VkPhysicalDeviceProperties properties= {};
+        vkGetPhysicalDeviceProperties(env->PhysicalDevice, &properties);
+        
         VkSamplerCreateInfo sampler_info = {};
         sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         sampler_info.magFilter = VK_FILTER_LINEAR;
@@ -581,11 +647,11 @@ namespace Rendering
         sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
         sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
         sampler_info.anisotropyEnable = VK_TRUE;
-        sampler_info.maxAnisotropy = 16;
+        sampler_info.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
         sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
         sampler_info.unnormalizedCoordinates = VK_FALSE;
         sampler_info.compareEnable = VK_FALSE;
-        sampler_info.compareOp = VK_COMPARE_OP_NEVER;
+        sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
         sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
         sampler_info.mipLodBias = 0.0f;
         sampler_info.minLod = 0.0f;
