@@ -101,7 +101,7 @@ namespace Init
                 env->PipelineLayout,
                 0,
                 1,
-                &env->DescriptorSets[i],
+                &env->DescriptorSet,
                 0,
                 nullptr);
 

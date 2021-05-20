@@ -124,7 +124,11 @@ namespace Rendering
         VkSemaphore RenderFinishedSemaphore;
         
         VkDescriptorSetLayout DescriptorSetLayout;
+        VkDescriptorSet DescriptorSet;
         VkDescriptorPool DescriptorPool;
+
+        VkBuffer UniformBuffer;
+        VkDeviceMemory UniformBufferMemory;
 
         VkBuffer VertexBuffer;
         VkDeviceMemory VertexBufferMemory;

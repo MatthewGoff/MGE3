@@ -211,18 +211,15 @@ namespace Rendering
     {
         VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
-        for (int i = 0; i < Environment.SwapchainConfig.Size; i++)
+        bool success = CreateDeviceBuffer(
+            bufferSize,
+            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            &env->UniformBuffer,
+            &env->UniformBufferMemory);
+        if (!success)
         {
-            bool success = CreateDeviceBuffer(
-                bufferSize,
-                VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                &env->UniformBuffers[i],
-                &env->UniformBuffersMemory[i]);
-            if (!success)
-            {
-                return false;
-            }
+            return false;
         }
         
         return true;
@@ -316,61 +313,53 @@ namespace Rendering
     }
     
     bool CreateDescriptorSets(VulkanEnvironment* env)
-    {
-        VkDescriptorSetLayout layouts[20];
-        for (int i = 0; i < 20; i++)
-        {
-            layouts[i] = env->DescriptorSetLayout;
-        }
-        
+    {        
         VkDescriptorSetAllocateInfo alloc_info = {};
         alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
         alloc_info.descriptorPool = env->DescriptorPool;
-        alloc_info.descriptorSetCount = (uint32)Environment.SwapchainConfig.Size;
-        alloc_info.pSetLayouts = layouts;
+        alloc_info.descriptorSetCount = 1;
+        alloc_info.pSetLayouts = &env->DescriptorSetLayout;
 
         VkResult result = vkAllocateDescriptorSets(
             env->LogicalDevice,
             &alloc_info,
-            env->DescriptorSets);
+            &env->DescriptorSet);
         if (result != VK_SUCCESS) {
             return false;
             // for reference: "failed to allocate descriptor sets!"
         }
 
-        for (int i = 0; i < Environment.SwapchainConfig.Size; i++) {
-            VkDescriptorBufferInfo buffer_info = {};
-            buffer_info.buffer = env->UniformBuffers[i];
-            buffer_info.offset = 0;
-            buffer_info.range = sizeof(UniformBufferObject);
-            
-            VkDescriptorImageInfo image_info = {};
-            image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            image_info.imageView = env->TextureView;
-            image_info.sampler = env->TextureSampler;
+        VkDescriptorBufferInfo buffer_info = {};
+        buffer_info.buffer = env->UniformBuffer;
+        buffer_info.offset = 0;
+        buffer_info.range = sizeof(UniformBufferObject);
+        
+        VkDescriptorImageInfo image_info = {};
+        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        image_info.imageView = env->TextureView;
+        image_info.sampler = env->TextureSampler;
 
-            VkWriteDescriptorSet descriptor_writes[2];
-            
-            descriptor_writes[0] = {};
-            descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptor_writes[0].dstSet = env->DescriptorSets[i];
-            descriptor_writes[0].dstBinding = 0;
-            descriptor_writes[0].dstArrayElement = 0;
-            descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            descriptor_writes[0].descriptorCount = 1;
-            descriptor_writes[0].pBufferInfo = &buffer_info;
-            
-            descriptor_writes[1] = {};
-            descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptor_writes[1].dstSet = env->DescriptorSets[i];
-            descriptor_writes[1].dstBinding = 1;
-            descriptor_writes[1].dstArrayElement = 0;
-            descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptor_writes[1].descriptorCount = 1;
-            descriptor_writes[1].pImageInfo = &image_info;
-            
-            vkUpdateDescriptorSets(env->LogicalDevice, 2, descriptor_writes, 0, nullptr);
-        }
+        VkWriteDescriptorSet descriptor_writes[2];
+        
+        descriptor_writes[0] = {};
+        descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[0].dstSet = env->DescriptorSet;
+        descriptor_writes[0].dstBinding = 0;
+        descriptor_writes[0].dstArrayElement = 0;
+        descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptor_writes[0].descriptorCount = 1;
+        descriptor_writes[0].pBufferInfo = &buffer_info;
+        
+        descriptor_writes[1] = {};
+        descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptor_writes[1].dstSet = env->DescriptorSet;
+        descriptor_writes[1].dstBinding = 1;
+        descriptor_writes[1].dstArrayElement = 0;
+        descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptor_writes[1].descriptorCount = 1;
+        descriptor_writes[1].pImageInfo = &image_info;
+        
+        vkUpdateDescriptorSets(env->LogicalDevice, 2, descriptor_writes, 0, nullptr);
 
         return true;
     }
@@ -840,7 +829,7 @@ namespace Rendering
         return true;
     }
 
-    void UpdateUniformBuffer(uint32 currentImage)
+    void UpdateUniformBuffer()
     {
         UniformBufferObject ubo = {};
 
@@ -850,7 +839,7 @@ namespace Rendering
         void* data;
         vkMapMemory(
             Environment.LogicalDevice,
-            Environment.UniformBuffersMemory[currentImage],
+            Environment.UniformBufferMemory,
             0,
             sizeof(ubo),
             0,
@@ -858,7 +847,7 @@ namespace Rendering
         memcpy(data, &ubo, sizeof(ubo));
         vkUnmapMemory(
             Environment.LogicalDevice,
-            Environment.UniformBuffersMemory[currentImage]);
+            Environment.UniformBufferMemory);
 
     }
     
@@ -891,7 +880,7 @@ namespace Rendering
             return false;
         }
 
-        UpdateUniformBuffer(image_index);
+        UpdateUniformBuffer();
 
         VkSubmitInfo submit_info = {};
         submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
