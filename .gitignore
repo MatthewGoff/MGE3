@@ -2,6 +2,9 @@
 
 build/*
 !build/Assets/
+
+*/__pycache__/
+
 # Matt uses /notes/ to store scratchwork, etc.
 notes/
 

@@ -1,12 +1,10 @@
 import os
+import config
 
 def obj_path(src_path):
     return src_path.replace("src\\", "build\\obj\\").replace(".cpp", ".obj")
 
 def source_files():
-    
-    search = []
-    search += ["src"]
 
     source_files = []
     def add_file(file):
@@ -14,7 +12,7 @@ def source_files():
         if (file[-4:] != ".cpp"): return
         if file not in source_files: source_files += [file]
 
-    for location in search:
+    for location in config.source():
         if "." in location:
             add_file(location)
         else:
@@ -31,20 +29,19 @@ def compile_command():
     command += " -c" # Do not link
     command += " -nologo" # No logo
     
-    #output += "-std:c++17" # Use c++ 17 standard
+    #command += "-std:c++17" # Use c++ 17 standard
 
     ## Debug ##
-    if (True):
+    if (config.debug()):
         command += " -Fdbuild\\" # Location of (intermediate) .pdb ("vc140.pdb")
         command += " -Zi" # Generates debug info used by Visual Studio
 
     ## Dissable warnings ##
-    #output += "-wd4533" # 4533 initialization of <var> is skipped by <goto>
-
+    command += config.ignore_warnings()
+    
     ## Header locations ##
     command += " -I src\\"
-    command += " -I C:\\GLM\\glm\\"
-    command += " -I C:\\VulkanSDK\\1.2.162.1\\Include\\vulkan"
+    command += " -I {}\\Include\\vulkan".format(config.vulkan_sdk())
 
     ## Always include ##
     command += " -FITypes.h"
@@ -65,7 +62,7 @@ def link_command():
     command += " -nologo" # No logo
 
     ## Debug ##
-    if (True):
+    if (config.debug()):
         command += " -DEBUG"
         command += " -PDB:build\\main.pdb" # Location of .pdb
 
@@ -73,7 +70,7 @@ def link_command():
     command += " user32.lib" # Multiple OS services from <window.h>
     command += " gdi32.lib" # StretchDIBits() from <windows.h>
     command += " winmm.lib" # timeBeginPeriod() from <windows.h>
-    command += " C:\\VulkanSDK\\1.2.162.1\\Lib\\vulkan-1.lib"
+    command += " {}\\Lib\\vulkan-1.lib".format(config.vulkan_sdk())
 
     ## obj files ##
     for root, dirs, files in os.walk("src"):
