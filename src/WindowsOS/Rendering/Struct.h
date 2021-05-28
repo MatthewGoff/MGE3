@@ -101,6 +101,44 @@ namespace Rendering
         char** DeviceExtensions;
     };
     
+    class Device
+    {
+        /*
+        Abstraction of the physical graphics card.
+        */
+        
+        public:
+        VkDevice LogicalDevice;
+        
+        bool CreateDevice(
+            VulkanConfig* config,
+            VkPhysicalDevice physical_device,
+            QueueFamilyConfig* queue_family_config,    
+            VkQueue* graphics_queue,
+            VkQueue* present_queue);
+
+        bool CreateBuffer(
+            VkDeviceSize size,
+            VkBufferUsageFlags usage,
+            VkMemoryPropertyFlags properties,
+            VkBuffer* buffer,
+            VkDeviceMemory* buffer_memory);
+
+        bool FindMemoryType(
+            uint32 typeFilter,
+            VkMemoryPropertyFlags properties,
+            uint32 &out);
+
+        VkPhysicalDeviceProperties PhysicalProperties;
+
+        private:
+        VkPhysicalDevice PhysicalDevice;
+        
+        VkPhysicalDeviceMemoryProperties MemoryProperties;
+        
+        
+    };
+    
     struct VulkanEnvironment
     {
         // Config
@@ -108,10 +146,9 @@ namespace Rendering
         SwapchainConfig SwapchainConfig;
         
         // Vulkan objects (notice "Vk" prefix)
+        Device Device;
         VkInstance Instance;
         VkSurfaceKHR Surface;
-        VkPhysicalDevice PhysicalDevice;
-        VkDevice LogicalDevice;
         VkQueue GraphicsQueue;
         VkQueue PresentQueue;
         VkSwapchainKHR Swapchain;
@@ -143,9 +180,6 @@ namespace Rendering
         VkImageView ImageViews[SwapchainConfig::MAX_SIZE];
         VkFramebuffer Framebuffers[SwapchainConfig::MAX_SIZE];
         VkCommandBuffer CommandBuffers[SwapchainConfig::MAX_SIZE];
-        VkBuffer UniformBuffers[SwapchainConfig::MAX_SIZE];
-        VkDeviceMemory UniformBuffersMemory[SwapchainConfig::MAX_SIZE];
-        VkDescriptorSet DescriptorSets[SwapchainConfig::MAX_SIZE];
     };
 }
 }

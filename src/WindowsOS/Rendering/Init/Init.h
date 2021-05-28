@@ -24,32 +24,14 @@ namespace Init
         QueueFamilyConfig* queue_family_config,
         SwapchainConfig* swapchain_config,
         VkPhysicalDevice* physical_device_handle);
-
-    bool CreateLogicalDevice(
-        VulkanConfig* config,
-        VkPhysicalDevice physical_device_handle,
-        QueueFamilyConfig* queue_family_config,    
-        VkQueue* GraphicsQueue,
-        VkQueue* PresentQueue,
-        VkDevice* logical_device_handle);
         
-    bool CreateSwapchain(
-        VulkanEnvironment* env,
-        QueueFamilyConfig* queue_family_config,
-        SwapchainConfig* swapchain_config);
+    bool CreateSwapchain(VulkanEnvironment* env);
         
     bool CreatePipeline(
         VulkanEnvironment* env,
-        VkDevice logical_device_handle,
-        SwapchainConfig* swapchain_config,
-        VkRenderPass* render_pass_handle,
-        VkPipeline* pipeline_handle,
-        VkDescriptorSetLayout* descriptor_set_layout);
+        VkDescriptorSetLayout* descriptor_set_layouts);
         
-    bool CreateCommandBuffers(
-        VulkanEnvironment* env,
-        QueueFamilyConfig* queue_family_config,
-        SwapchainConfig* swapchain_config);
+    bool CreateCommandBuffers(VulkanEnvironment* env);
 
     bool CreateVKSemaphore(
         VkDevice logical_device_handle,

@@ -5,9 +5,9 @@ namespace WindowsOS { namespace Rendering {
 namespace Init
 {    
     bool CreateRenderPass(
-        VkDevice logical_device_handle,
+        VkDevice logical_device,
         VkFormat format,
-        VkRenderPass* render_pass_handle)
+        VkRenderPass* render_pass)
     {
         VkAttachmentDescription color_attachment = {};
         color_attachment.format = format;
@@ -46,10 +46,10 @@ namespace Init
         render_pass_info.pDependencies = &dependency;
 
         VkResult result = vkCreateRenderPass(
-            logical_device_handle,
+            logical_device,
             &render_pass_info,
             nullptr,
-            render_pass_handle);
+            render_pass);
         if (result != VK_SUCCESS)
         {
             return false;
@@ -59,34 +59,33 @@ namespace Init
     }
     
     VkResult CreateShaderModule(
-        VkDevice logical_device_handle,
+        VkDevice logical_device,
         byte* code,
         int length,
         VkShaderModule* shader_module)
     {
-        VkShaderModuleCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        createInfo.codeSize = length;
-        createInfo.pCode = (uint32*)code;
+        VkShaderModuleCreateInfo create_info = {};
+        create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        create_info.codeSize = length;
+        create_info.pCode = (uint32*)code;
         
-        VkResult result = vkCreateShaderModule(logical_device_handle, &createInfo, nullptr,
-        shader_module);
+        VkResult result = vkCreateShaderModule(
+            logical_device,
+            &create_info,
+            nullptr,
+            shader_module);
         
         return result;
     }
     
     bool CreatePipeline(
         VulkanEnvironment* env,
-        VkDevice logical_device_handle,
-        SwapchainConfig* swapchain_config,
-        VkRenderPass* render_pass_handle,
-        VkPipeline* pipeline_handle,
         VkDescriptorSetLayout* descriptor_set_layouts)
     {
         bool success = CreateRenderPass(
-            logical_device_handle,
-            swapchain_config->SurfaceFormat.format,
-            render_pass_handle);
+            env->Device.LogicalDevice,
+            env->SwapchainConfig.SurfaceFormat.format,
+            &env->RenderPass);
         if (!success)
         {
             Error("[Error] Failed to create render pass.\n");
@@ -108,23 +107,16 @@ namespace Init
         VkShaderModule vert_module;
         VkShaderModule frag_module;
         
-        Debug("[Debug] vert_size = ");
-        Debug(vert_size);
-        Debug("\n")
-        Debug("[Debug] frag_size = ");
-        Debug(frag_size);
-        Debug("\n");
-        
         VkResult result;
         result = CreateShaderModule(
-            logical_device_handle,
+            env->Device.LogicalDevice,
             vert_spv,
             vert_size,
             &vert_module);
         if (result != VK_SUCCESS) return false;
 
         result = CreateShaderModule(
-            logical_device_handle,
+            env->Device.LogicalDevice,
             frag_spv,
             frag_size,
             &frag_module);
@@ -171,14 +163,14 @@ namespace Init
         VkViewport viewport = {};
         viewport.x = 0.0f;
         viewport.y = 0.0f;
-        viewport.width = (float) swapchain_config->Extent.width;
-        viewport.height = (float) swapchain_config->Extent.height;
+        viewport.width = (float) env->SwapchainConfig.Extent.width;
+        viewport.height = (float) env->SwapchainConfig.Extent.height;
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
 
         VkRect2D scissor = {};
         scissor.offset = {0, 0};
-        scissor.extent = swapchain_config->Extent;
+        scissor.extent = env->SwapchainConfig.Extent;
 
         VkPipelineViewportStateCreateInfo viewport_state = {};
         viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -247,9 +239,9 @@ namespace Init
         color_blending.blendConstants[2] = 0.0f; // Optional
         color_blending.blendConstants[3] = 0.0f; // Optional
 
-        VkPipelineDynamicStateCreateInfo dynamicState = {}; // Not using
+        VkPipelineDynamicStateCreateInfo dynamic_state = {}; // Not using
 
-        VkPipelineLayoutCreateInfo pipeline_layout_info{};
+        VkPipelineLayoutCreateInfo pipeline_layout_info = {};
         pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipeline_layout_info.setLayoutCount = 1;
         pipeline_layout_info.pSetLayouts = descriptor_set_layouts;
@@ -258,7 +250,7 @@ namespace Init
 
         //VkResult result;
         result = vkCreatePipelineLayout(
-            logical_device_handle,
+            env->Device.LogicalDevice,
             &pipeline_layout_info,
             nullptr,
             &env->PipelineLayout);
@@ -277,26 +269,26 @@ namespace Init
         pipeline_info.pColorBlendState = &color_blending;
         pipeline_info.pDynamicState = nullptr; // Optional
         pipeline_info.layout = env->PipelineLayout;
-        pipeline_info.renderPass = *render_pass_handle;
+        pipeline_info.renderPass = env->RenderPass;
         pipeline_info.subpass = 0;
         pipeline_info.basePipelineHandle = VK_NULL_HANDLE; // Optional
         pipeline_info.basePipelineIndex = -1; // Optional
 
         //VkResult result;
         result = vkCreateGraphicsPipelines(
-            logical_device_handle,
+            env->Device.LogicalDevice,
             VK_NULL_HANDLE,
             1,
             &pipeline_info,
             nullptr,
-            pipeline_handle);
+            &env->Pipeline);
         if (result != VK_SUCCESS)
         {
             return false;
         }
 
-        vkDestroyShaderModule(logical_device_handle, vert_module, nullptr);
-        vkDestroyShaderModule(logical_device_handle, frag_module, nullptr);
+        vkDestroyShaderModule(env->Device.LogicalDevice, vert_module, nullptr);
+        vkDestroyShaderModule(env->Device.LogicalDevice, frag_module, nullptr);
         free(vert_spv);
         free(frag_spv);
         

@@ -16,6 +16,12 @@ layout(location = 1) out vec2 fragTexCoord;
 void main()
 {
     vec2 final_position = inPosition - ubo.camPosition;
+    if (ubo.camDimensions.x != 0)
+    {
+        float x = final_position.x / (0.5 * ubo.camDimensions.x);
+        float y = final_position.y / (0.5 * ubo.camDimensions.y);
+        final_position = vec2(x, y);
+    }
     
     gl_Position = vec4(final_position, 0.0, 1.0);
     

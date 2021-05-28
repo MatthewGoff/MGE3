@@ -1,19 +1,18 @@
 #include "..\Struct.h"
 
-namespace WindowsOS { namespace Rendering {
+namespace WindowsOS {
+namespace Rendering {
 namespace Init
 {    
-    bool CreateImageViews(
-        VulkanEnvironment* env,
-        SwapchainConfig* swapchain_config)
+    bool CreateImageViews(VulkanEnvironment* env)
     {
-        for (int i = 0; i < swapchain_config->Size; i++)
+        for (int i = 0; i < env->SwapchainConfig.Size; i++)
         {
             VkImageViewCreateInfo create_info = {};
             create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
             create_info.image = env->Images[i];
             create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            create_info.format = swapchain_config->SurfaceFormat.format;
+            create_info.format = env->SwapchainConfig.SurfaceFormat.format;
             
             create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
             create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -27,7 +26,7 @@ namespace Init
             create_info.subresourceRange.layerCount = 1;
             
             VkResult result = vkCreateImageView(
-                env->LogicalDevice,
+                env->Device.LogicalDevice,
                 &create_info,
                 nullptr,
                 &env->ImageViews[i]);
@@ -61,19 +60,16 @@ namespace Init
         }
     }
 
-    bool CreateSwapchain(
-        VulkanEnvironment* env,
-        QueueFamilyConfig* queue_family_config,
-        SwapchainConfig* swapchain_config)
+    bool CreateSwapchain(VulkanEnvironment* env)
     {
-        swapchain_config->Extent = ChooseSwapExtent(&swapchain_config->Capabilities);
+        env->SwapchainConfig.Extent = ChooseSwapExtent(&env->SwapchainConfig.Capabilities);
         
-        uint32 image_count = swapchain_config->Capabilities.minImageCount + 1;
+        uint32 image_count = env->SwapchainConfig.Capabilities.minImageCount + 1;
         
         // 0 is a reserved value indicating there is no maximum
-        if (swapchain_config->Capabilities.maxImageCount != 0)
+        if (env->SwapchainConfig.Capabilities.maxImageCount != 0)
         {
-            image_count = Util::Min(image_count, swapchain_config->Capabilities.maxImageCount);
+            image_count = Util::Min(image_count, env->SwapchainConfig.Capabilities.maxImageCount);
         }
         
         if (image_count > SwapchainConfig::MAX_SIZE)
@@ -82,23 +78,23 @@ namespace Init
             return false;
         }
         
-        swapchain_config->Size = image_count;
+        env->SwapchainConfig.Size = image_count;
                 
         VkSwapchainCreateInfoKHR create_info = {};
         create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
         create_info.surface = env->Surface;
-        create_info.minImageCount = swapchain_config->Size;
-        create_info.imageFormat = swapchain_config->SurfaceFormat.format;
-        create_info.imageColorSpace = swapchain_config->SurfaceFormat.colorSpace;
-        create_info.imageExtent = swapchain_config->Extent;
+        create_info.minImageCount = env->SwapchainConfig.Size;
+        create_info.imageFormat = env->SwapchainConfig.SurfaceFormat.format;
+        create_info.imageColorSpace = env->SwapchainConfig.SurfaceFormat.colorSpace;
+        create_info.imageExtent = env->SwapchainConfig.Extent;
         create_info.imageArrayLayers = 1;
         create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         
         uint32 indices[] = {
-            (uint32)queue_family_config->GraphicsIndex,
-            (uint32)queue_family_config->PresentIndex};
+            (uint32)env->QueueFamilyConfig.GraphicsIndex,
+            (uint32)env->QueueFamilyConfig.PresentIndex};
         
-        if (queue_family_config->GraphicsIndex != queue_family_config->PresentIndex)
+        if (env->QueueFamilyConfig.GraphicsIndex != env->QueueFamilyConfig.PresentIndex)
         {
             create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
             create_info.queueFamilyIndexCount = 2;
@@ -111,14 +107,14 @@ namespace Init
             create_info.pQueueFamilyIndices = nullptr; // Optional
         }
 
-        create_info.preTransform = swapchain_config->Capabilities.currentTransform;
+        create_info.preTransform = env->SwapchainConfig.Capabilities.currentTransform;
         create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-        create_info.presentMode = swapchain_config->PresentMode;
+        create_info.presentMode = env->SwapchainConfig.PresentMode;
         create_info.clipped = VK_TRUE;
         create_info.oldSwapchain = VK_NULL_HANDLE;
         
         VkResult result = vkCreateSwapchainKHR(
-            env->LogicalDevice,
+            env->Device.LogicalDevice,
             &create_info,
             nullptr,
             &env->Swapchain);
@@ -127,24 +123,24 @@ namespace Init
             return false;
         }
         
-        int temp = swapchain_config->Size;
+        int temp = env->SwapchainConfig.Size;
         
         // This call should not be neccesary but there is a validation error without it.
         vkGetSwapchainImagesKHR(
-            env->LogicalDevice,
+            env->Device.LogicalDevice,
             env->Swapchain,
-            (uint32*)&swapchain_config->Size,
+            (uint32*)&env->SwapchainConfig.Size,
             nullptr);
 
-        Assert(temp == swapchain_config->Size);
+        Assert(temp == env->SwapchainConfig.Size);
 
         vkGetSwapchainImagesKHR(
-            env->LogicalDevice,
+            env->Device.LogicalDevice,
             env->Swapchain,
-            (uint32*)&swapchain_config->Size,
+            (uint32*)&env->SwapchainConfig.Size,
             (VkImage*)env->Images);
 
-        bool success = CreateImageViews(env, swapchain_config);
+        bool success = CreateImageViews(env);
         if (!success)
         {
             return false;

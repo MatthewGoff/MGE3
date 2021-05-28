@@ -4,7 +4,7 @@
 namespace WindowsOS {
 namespace Rendering
 {
-    bool initVulkan(HINSTANCE instance_handle, HWND window_handle);
+    bool InitVulkan(HINSTANCE instance_handle, HWND window_handle);
     bool DrawFrame();
 }
 }

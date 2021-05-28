@@ -3,9 +3,9 @@
 namespace WindowsOS { namespace Rendering {
 namespace Init
 {        
-    bool CreateFramebuffers(VulkanEnvironment* env, SwapchainConfig* swapchain_config)
+    bool CreateFramebuffers(VulkanEnvironment* env)
     {
-        for (int i = 0; i < swapchain_config->Size; i++) {
+        for (int i = 0; i < env->SwapchainConfig.Size; i++) {
             VkImageView attachments[] = {env->ImageViews[i]};
 
             VkFramebufferCreateInfo framebuffer_info = {};
@@ -13,12 +13,12 @@ namespace Init
             framebuffer_info.renderPass = env->RenderPass;
             framebuffer_info.attachmentCount = 1;
             framebuffer_info.pAttachments = attachments;
-            framebuffer_info.width = swapchain_config->Extent.width;
-            framebuffer_info.height = swapchain_config->Extent.height;
+            framebuffer_info.width = env->SwapchainConfig.Extent.width;
+            framebuffer_info.height = env->SwapchainConfig.Extent.height;
             framebuffer_info.layers = 1;
 
             VkResult result = vkCreateFramebuffer(
-                env->LogicalDevice,
+                env->Device.LogicalDevice,
                 &framebuffer_info,
                 nullptr,
                 &env->Framebuffers[i]);
@@ -31,12 +31,9 @@ namespace Init
         return true;
     }
         
-    bool CreateCommandBuffers(
-        VulkanEnvironment* env,
-        QueueFamilyConfig* queue_family_config,
-        SwapchainConfig* swapchain_config)
+    bool CreateCommandBuffers(VulkanEnvironment* env)
     {
-        bool success = CreateFramebuffers(env, swapchain_config);
+        bool success = CreateFramebuffers(env);
         if (!success)
         {
             Error("[Error] Failed to create framebuffers.\n");
@@ -47,10 +44,10 @@ namespace Init
         alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         alloc_info.commandPool = env->CommandPool;
         alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        alloc_info.commandBufferCount = swapchain_config->Size;
+        alloc_info.commandBufferCount = env->SwapchainConfig.Size;
 
         VkResult result = vkAllocateCommandBuffers(
-            env->LogicalDevice,
+            env->Device.LogicalDevice,
             &alloc_info,
             env->CommandBuffers);
         if (result != VK_SUCCESS)
@@ -58,7 +55,7 @@ namespace Init
             return false;
         }
         
-        for (int i = 0; i < swapchain_config->Size; i++)
+        for (int i = 0; i < env->SwapchainConfig.Size; i++)
         {
             VkCommandBufferBeginInfo begin_info = {};
             begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -76,7 +73,7 @@ namespace Init
             render_pass_info.renderPass = env->RenderPass;
             render_pass_info.framebuffer = env->Framebuffers[i];
             render_pass_info.renderArea.offset = {0, 0};
-            render_pass_info.renderArea.extent = swapchain_config->Extent;
+            render_pass_info.renderArea.extent = env->SwapchainConfig.Extent;
             VkClearValue clear_color = {0.0f, 0.0f, 0.0f, 1.0f};
             render_pass_info.clearValueCount = 1;
             render_pass_info.pClearValues = &clear_color;

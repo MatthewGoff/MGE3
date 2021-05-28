@@ -468,7 +468,7 @@ namespace WindowsOS
         
         Engine::InitializeGame(RootMemory);
         
-        Rendering::initVulkan(hInstance, window_handle);
+        Rendering::InitVulkan(hInstance, window_handle);
         
         // End initialization
 

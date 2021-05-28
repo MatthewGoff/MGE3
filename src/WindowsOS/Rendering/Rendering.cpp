@@ -78,99 +78,9 @@ namespace Rendering
         config->DeviceExtensionsCount = 1;
         config->DeviceExtensions = new char*[] {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
     }
-    
-    /*
-    FindMemoryType:
-    Find a type of memory (available on physical_device) which has the desired properties provided
-    by param "properties"
-    */
-    bool FindMemoryType(
-        VkPhysicalDevice physical_device,
-        uint32 typeFilter,
-        VkMemoryPropertyFlags properties,
-        uint32 &out)
-    {
-        VkPhysicalDeviceMemoryProperties memProperties;
-        vkGetPhysicalDeviceMemoryProperties(physical_device, &memProperties);
-
-        for (uint32 i = 0; i < memProperties.memoryTypeCount; i++)
-        {
-            if ((typeFilter & (1 << i))
-                && ((memProperties.memoryTypes[i].propertyFlags & properties) == properties))
-            {
-                out = i;
-                return true;
-            }
-        }
-        
-        return false;
-        //for reference: "failed to find suitable memory type!"
-    }
-
-    bool CreateDeviceBuffer(
-        VkDeviceSize size,
-        VkBufferUsageFlags usage,
-        VkMemoryPropertyFlags properties,
-        VkBuffer* buffer,
-        VkDeviceMemory* buffer_memory)
-    {
-        VkBufferCreateInfo create_info = {};
-        create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        create_info.size = size;
-        create_info.usage = usage;
-        create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        
-        VkResult result = vkCreateBuffer(
-            Environment.LogicalDevice,
-            &create_info,
-            nullptr,
-            buffer);
-        if (result != VK_SUCCESS)
-        {
-            return false;
-        }
-        
-        VkMemoryRequirements mem_requirements;
-        vkGetBufferMemoryRequirements(
-            Environment.LogicalDevice,
-            *buffer,
-            &mem_requirements);
-        
-        uint32 memory_type;
-        bool success = FindMemoryType(
-            Environment.PhysicalDevice,
-            mem_requirements.memoryTypeBits,
-            properties,
-            memory_type);
-        if (!success) {return false;}
-        
-        VkMemoryAllocateInfo alloc_info = {};
-        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        alloc_info.allocationSize = mem_requirements.size;
-        alloc_info.memoryTypeIndex = memory_type;
-        
-        // for reference: vkFreeMemory(logical_device, buffer_memory, nullptr)
-        result = vkAllocateMemory(
-            Environment.LogicalDevice,
-            &alloc_info,
-            nullptr,
-            buffer_memory);
-        if (result != VK_SUCCESS)
-        {
-            return false;
-        }
-        
-        result = vkBindBufferMemory(Environment.LogicalDevice, *buffer, *buffer_memory, 0);
-        if (result != VK_SUCCESS)
-        {
-            return false;
-        }
-        
-        return true;
-    }
 
     bool CreateVertexBuffer(
-        VkDevice logical_device,
+        Device* device,
         VkBuffer* vertex_buffer,
         VkDeviceMemory* vertex_buffer_memory)
     {
@@ -188,7 +98,7 @@ namespace Rendering
         int vertices_count = 6;
         int vertices_size = vertices_count * sizeof(vertices[0]);
                 
-        bool success = CreateDeviceBuffer(
+        bool success = device->CreateBuffer(
             vertices_size,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -200,18 +110,18 @@ namespace Rendering
         }
         
         void* data;
-        vkMapMemory(logical_device, *vertex_buffer_memory, 0, vertices_size, 0, &data);
+        vkMapMemory(device->LogicalDevice, *vertex_buffer_memory, 0, vertices_size, 0, &data);
         memcpy(data, vertices, vertices_size);
-        vkUnmapMemory(logical_device, *vertex_buffer_memory);
+        vkUnmapMemory(device->LogicalDevice, *vertex_buffer_memory);
 
         return true;
     }
 
-    bool CreateUniformBuffers(VulkanEnvironment* env)
+    bool CreateUniformBuffer(VulkanEnvironment* env)
     {
         VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
-        bool success = CreateDeviceBuffer(
+        bool success = env->Device.CreateBuffer(
             bufferSize,
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -248,7 +158,7 @@ namespace Rendering
         layout_info.pBindings = bindings;
         
         VkResult result = vkCreateDescriptorSetLayout(
-            env->LogicalDevice,
+            env->Device.LogicalDevice,
             &layout_info,
             nullptr,
             &env->DescriptorSetLayout);
@@ -277,7 +187,7 @@ namespace Rendering
         pool_info.maxSets = (uint32)Environment.SwapchainConfig.Size;
 
         VkResult result = vkCreateDescriptorPool(
-            env->LogicalDevice,
+            env->Device.LogicalDevice,
             &pool_info,
             nullptr,
             &env->DescriptorPool);
@@ -301,7 +211,7 @@ namespace Rendering
         pool_info.flags = 0; // Optional
         
         VkResult result = vkCreateCommandPool(
-            env->LogicalDevice,
+            env->Device.LogicalDevice,
             &pool_info,
             nullptr,
             &env->CommandPool);
@@ -312,7 +222,7 @@ namespace Rendering
         return true;
     }
     
-    bool CreateDescriptorSets(VulkanEnvironment* env)
+    bool CreateDescriptorSet(VulkanEnvironment* env)
     {        
         VkDescriptorSetAllocateInfo alloc_info = {};
         alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -321,7 +231,7 @@ namespace Rendering
         alloc_info.pSetLayouts = &env->DescriptorSetLayout;
 
         VkResult result = vkAllocateDescriptorSets(
-            env->LogicalDevice,
+            env->Device.LogicalDevice,
             &alloc_info,
             &env->DescriptorSet);
         if (result != VK_SUCCESS) {
@@ -359,7 +269,7 @@ namespace Rendering
         descriptor_writes[1].descriptorCount = 1;
         descriptor_writes[1].pImageInfo = &image_info;
         
-        vkUpdateDescriptorSets(env->LogicalDevice, 2, descriptor_writes, 0, nullptr);
+        vkUpdateDescriptorSets(env->Device.LogicalDevice, 2, descriptor_writes, 0, nullptr);
 
         return true;
     }
@@ -373,7 +283,7 @@ namespace Rendering
         alloc_info.commandBufferCount = 1;
 
         VkCommandBuffer command_buffer;
-        vkAllocateCommandBuffers(Environment.LogicalDevice, &alloc_info, &command_buffer);
+        vkAllocateCommandBuffers(Environment.Device.LogicalDevice, &alloc_info, &command_buffer);
 
         VkCommandBufferBeginInfo begin_info = {};
         begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -397,7 +307,7 @@ namespace Rendering
         vkQueueWaitIdle(Environment.GraphicsQueue);
 
         vkFreeCommandBuffers(
-            Environment.LogicalDevice,
+            Environment.Device.LogicalDevice,
             Environment.CommandPool,
             1,
             &command_buffer);
@@ -523,7 +433,7 @@ namespace Rendering
         image_info.samples = VK_SAMPLE_COUNT_1_BIT;
         image_info.flags = 0; // Optional
 
-        VkResult result = vkCreateImage(env->LogicalDevice, &image_info, nullptr, &env->Texture);
+        VkResult result = vkCreateImage(env->Device.LogicalDevice, &image_info, nullptr, &env->Texture);
         if (result != VK_SUCCESS)
         {
             return false;
@@ -531,11 +441,10 @@ namespace Rendering
         }
         
         VkMemoryRequirements memory_requirements;
-        vkGetImageMemoryRequirements(env->LogicalDevice, env->Texture, &memory_requirements);
+        vkGetImageMemoryRequirements(env->Device.LogicalDevice, env->Texture, &memory_requirements);
         
         uint32 memory_type;
-        bool success = FindMemoryType(
-            Environment.PhysicalDevice,
+        bool success = env->Device.FindMemoryType(
             memory_requirements.memoryTypeBits,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
             memory_type);
@@ -550,7 +459,7 @@ namespace Rendering
         alloc_info.memoryTypeIndex = memory_type;
         
         result = vkAllocateMemory(
-            env->LogicalDevice,
+            env->Device.LogicalDevice,
             &alloc_info,
             nullptr,
             &env->TextureMemory);
@@ -560,7 +469,7 @@ namespace Rendering
             // for reference: "failed to allocate image memory"
         }
         
-        result = vkBindImageMemory(env->LogicalDevice, env->Texture, env->TextureMemory, 0);
+        result = vkBindImageMemory(env->Device.LogicalDevice, env->Texture, env->TextureMemory, 0);
         if (result != VK_SUCCESS)
         {
             return false;
@@ -573,7 +482,7 @@ namespace Rendering
         VkBuffer stagingBuffer;
         VkDeviceMemory stagingBufferMemory;
         
-        CreateDeviceBuffer(
+        env->Device.CreateBuffer(
             image_size,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
@@ -581,9 +490,9 @@ namespace Rendering
             &stagingBufferMemory);
 
         void* data;
-        vkMapMemory(env->LogicalDevice, stagingBufferMemory, 0, image_size, 0, &data);
+        vkMapMemory(env->Device.LogicalDevice, stagingBufferMemory, 0, image_size, 0, &data);
         memcpy(data, bitmap->Pixels, (uint32)image_size);
-        vkUnmapMemory(env->LogicalDevice, stagingBufferMemory);
+        vkUnmapMemory(env->Device.LogicalDevice, stagingBufferMemory);
 
         TransitionImageLayout(
             env->Texture,
@@ -615,7 +524,7 @@ namespace Rendering
         view_info.subresourceRange.layerCount = 1;
 
         result = vkCreateImageView(
-            env->LogicalDevice,
+            env->Device.LogicalDevice,
             &view_info,
             nullptr,
             &env->TextureView);
@@ -624,9 +533,6 @@ namespace Rendering
             return false;
             // for reference: "failed to create texture image view"
         }
-
-        VkPhysicalDeviceProperties properties= {};
-        vkGetPhysicalDeviceProperties(env->PhysicalDevice, &properties);
         
         VkSamplerCreateInfo sampler_info = {};
         sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -636,7 +542,7 @@ namespace Rendering
         sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
         sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
         sampler_info.anisotropyEnable = VK_TRUE;
-        sampler_info.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
+        sampler_info.maxAnisotropy = env->Device.PhysicalProperties.limits.maxSamplerAnisotropy;
         sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
         sampler_info.unnormalizedCoordinates = VK_FALSE;
         sampler_info.compareEnable = VK_FALSE;
@@ -647,7 +553,7 @@ namespace Rendering
         sampler_info.maxLod = 0.0f;
 
         result = vkCreateSampler(
-            env->LogicalDevice,
+            env->Device.LogicalDevice,
             &sampler_info,
             nullptr,
             &env->TextureSampler);
@@ -674,7 +580,7 @@ namespace Rendering
         return true;
     }
 
-    bool initVulkan(HINSTANCE instance_handle, HWND window_handle)
+    bool InitVulkan(HINSTANCE instance_handle, HWND window_handle)
     {
         VkDebugUtilsMessengerCreateInfoEXT debug_info; //Can forget after init
         GetDebugInfo(&debug_info);
@@ -702,26 +608,27 @@ namespace Rendering
             return false;
         }
 
+        VkPhysicalDevice physical_device;
         success = Init::SelectPhysicalDevice(
             &config,
             Environment.Instance,
             Environment.Surface,
             &Environment.QueueFamilyConfig,
             &Environment.SwapchainConfig,
-            &Environment.PhysicalDevice);
+            &physical_device);
         if (!success)
         {
             Error("[Error] Failed to select physical device.\n");
             return false;
         }
 
-        success = Init::CreateLogicalDevice(
+        
+        success = Environment.Device.CreateDevice(
             &config,
-            Environment.PhysicalDevice,
+            physical_device,
             &Environment.QueueFamilyConfig,    
             &Environment.GraphicsQueue,
-            &Environment.PresentQueue,
-            &Environment.LogicalDevice);
+            &Environment.PresentQueue);
         if (!success)
         {
             Error("[Error] Failed to create logical device.\n");
@@ -729,9 +636,7 @@ namespace Rendering
         }
 
         success = Init::CreateSwapchain(
-            &Environment,
-            &Environment.QueueFamilyConfig,
-            &Environment.SwapchainConfig);
+            &Environment);
         if (!success)
         {
             Error("[Error] Failed to create swap chain.\n");
@@ -747,10 +652,6 @@ namespace Rendering
 
         success = Init::CreatePipeline(
             &Environment,
-            Environment.LogicalDevice,
-            &Environment.SwapchainConfig,
-            &Environment.RenderPass,
-            &Environment.Pipeline,
             &Environment.DescriptorSetLayout);
         if (!success)
         {
@@ -773,7 +674,7 @@ namespace Rendering
         }
         
         success = CreateVertexBuffer(
-            Environment.LogicalDevice,
+            &Environment.Device,
             &Environment.VertexBuffer,
             &Environment.VertexBufferMemory);
         if (!success)
@@ -782,7 +683,7 @@ namespace Rendering
             return false;
         }
 
-        success = CreateUniformBuffers(&Environment);
+        success = CreateUniformBuffer(&Environment);
         if (!success)
         {
             Error("[Error] Failed to create uniform buffers.\n");
@@ -796,7 +697,7 @@ namespace Rendering
             return false;
         }
 
-        success = CreateDescriptorSets(&Environment);
+        success = CreateDescriptorSet(&Environment);
         if (!success)
         {
             Error("[Error] Failed to create descriptor sets.\n");
@@ -804,9 +705,7 @@ namespace Rendering
         }
 
         success = Init::CreateCommandBuffers(
-            &Environment,
-            &Environment.QueueFamilyConfig,
-            &Environment.SwapchainConfig);
+            &Environment);
         if (!success)
         {
             Error("[Error] Failed to create command buffers.\n");
@@ -814,10 +713,10 @@ namespace Rendering
         }
 
         success = Init::CreateVKSemaphore(
-            Environment.LogicalDevice,
+            Environment.Device.LogicalDevice,
             &Environment.ImageAvailableSemaphore);
         success = success && Init::CreateVKSemaphore(
-            Environment.LogicalDevice,
+            Environment.Device.LogicalDevice,
             &Environment.RenderFinishedSemaphore);
         if (!success)
         {
@@ -834,11 +733,11 @@ namespace Rendering
         UniformBufferObject ubo = {};
 
         ubo.CameraPosition = {0.0, 0.0};//{0.1, 0.1};
-        ubo.CameraDimensions = {0.0, 0.0};//{0.1, 0.1};
+        ubo.CameraDimensions = {19.2, 10.8};//{0.1, 0.1};
         
         void* data;
         vkMapMemory(
-            Environment.LogicalDevice,
+            Environment.Device.LogicalDevice,
             Environment.UniformBufferMemory,
             0,
             sizeof(ubo),
@@ -846,7 +745,7 @@ namespace Rendering
             &data);
         memcpy(data, &ubo, sizeof(ubo));
         vkUnmapMemory(
-            Environment.LogicalDevice,
+            Environment.Device.LogicalDevice,
             Environment.UniformBufferMemory);
 
     }
@@ -858,7 +757,7 @@ namespace Rendering
         
         uint32 image_index;
         VkResult result = vkAcquireNextImageKHR(
-            Environment.LogicalDevice,
+            Environment.Device.LogicalDevice,
             Environment.Swapchain,
             UINT64_MAX,
             Environment.ImageAvailableSemaphore,
