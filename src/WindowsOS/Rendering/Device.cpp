@@ -67,6 +67,8 @@ bool Device::CreateDevice(
         0,
         present_queue);
     
+    InitializeBuffers();
+
     return true;
 }
 
@@ -170,6 +172,36 @@ bool Device::CreateBuffer(
     AllocateDeviceMemory(size, usage, properties, buffer_memory);
         
     BindBuffer(size, usage, properties, buffer, buffer_memory);
+    
+    return true;
+}
+
+bool Device::InitializeBuffers()
+{
+    bool success;
+    success = CreateBuffer(
+        VertexBuffer.Size,//vertices_size,
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        &VertexBuffer.Handle,
+        &VertexBuffer.Memory);
+    if (!success) {return false;}
+    
+    success = CreateBuffer(
+        UniformBuffer.Size,//bufferSize,
+        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        &UniformBuffer.Handle,
+        &UniformBuffer.Memory);
+    if (!success) {return false;}
+    
+    success = CreateBuffer(
+        StagingBuffer.Size,//image_size,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        &StagingBuffer.Handle,
+        &StagingBuffer.Memory);
+    if (!success) {return false;}
     
     return true;
 }

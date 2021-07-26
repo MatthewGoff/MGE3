@@ -35,11 +35,6 @@ struct VulkanEnvironment
     
     VkImageView TextureView;
     VkSampler TextureSampler;
-
-    Buffer UniformBuffer;
-    Buffer VertexBuffer;
-    Buffer StagingBuffer;
-    Image Texture;
    
     // Objects with one instance per swapchain image
     VkImage Images[SwapchainConfig::MAX_SIZE];

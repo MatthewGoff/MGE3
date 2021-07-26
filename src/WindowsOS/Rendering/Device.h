@@ -15,7 +15,12 @@ class Device
     
     public:
     VkDevice LogicalDevice;
-    
+
+    Buffer UniformBuffer;
+    Buffer VertexBuffer;
+    Buffer StagingBuffer;
+    Image Texture;
+        
     bool CreateDevice(
         VulkanConfig* config,
         VkPhysicalDevice physical_device,
@@ -43,6 +48,8 @@ class Device
     VkPhysicalDevice PhysicalDevice;
     
     VkPhysicalDeviceMemoryProperties MemoryProperties;
+    
+    bool InitializeBuffers();
     
     bool AllocateDeviceMemory(
         VkDeviceSize size,

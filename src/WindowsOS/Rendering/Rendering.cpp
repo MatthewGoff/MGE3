@@ -79,36 +79,6 @@ namespace Rendering
         config->DeviceExtensionsCount = 1;
         config->DeviceExtensions = new char*[] {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
     }
-
-    bool CreateBuffers(Device* device)
-    {
-        bool success;
-        success = device->CreateBuffer(
-            Environment.VertexBuffer.Size,//vertices_size,
-            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            &Environment.VertexBuffer.Handle,
-            &Environment.VertexBuffer.Memory);
-        if (!success) {return false;}
-        
-        success = device->CreateBuffer(
-            Environment.UniformBuffer.Size,//bufferSize,
-            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            &Environment.UniformBuffer.Handle,
-            &Environment.UniformBuffer.Memory);
-        if (!success) {return false;}
-        
-        success = device->CreateBuffer(
-            Environment.StagingBuffer.Size,//image_size,
-            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            &Environment.StagingBuffer.Handle,
-            &Environment.StagingBuffer.Memory);
-        if (!success) {return false;}
-        
-        return true;
-    }
     
     bool CreateVertexBuffer(
         Device* device,
@@ -242,7 +212,7 @@ namespace Rendering
         }
 
         VkDescriptorBufferInfo buffer_info = {};
-        buffer_info.buffer = Environment.UniformBuffer.Handle;
+        buffer_info.buffer = Environment.Device.UniformBuffer.Handle;
         buffer_info.offset = 0;
         buffer_info.range = sizeof(UniformBufferObject);
         
@@ -423,32 +393,32 @@ namespace Rendering
         success = env->Device.CreateImage(
             bitmap->Width,
             bitmap->Height,
-            Environment.Texture.Size,
-            &Environment.Texture.Handle,
-            &Environment.Texture.Memory);
+            Environment.Device.Texture.Size,
+            &Environment.Device.Texture.Handle,
+            &Environment.Device.Texture.Memory);
 
         // Part 2: Move memory to device
         
         VkMemoryRequirements mem_req;
-        vkGetImageMemoryRequirements(env->Device.LogicalDevice, Environment.Texture.Handle, &mem_req);    
+        vkGetImageMemoryRequirements(env->Device.LogicalDevice, Environment.Device.Texture.Handle, &mem_req);    
 
         void* data;
-        vkMapMemory(env->Device.LogicalDevice, Environment.StagingBuffer.Memory, 0, mem_req.size, 0, &data);
+        vkMapMemory(env->Device.LogicalDevice, Environment.Device.StagingBuffer.Memory, 0, mem_req.size, 0, &data);
         memcpy(data, bitmap->Pixels, (uint32)mem_req.size);
-        vkUnmapMemory(env->Device.LogicalDevice, Environment.StagingBuffer.Memory);
+        vkUnmapMemory(env->Device.LogicalDevice, Environment.Device.StagingBuffer.Memory);
 
         TransitionImageLayout(
-            Environment.Texture.Handle,
+            Environment.Device.Texture.Handle,
             VK_FORMAT_R8G8B8A8_SRGB,
             VK_IMAGE_LAYOUT_UNDEFINED,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         CopyBufferToImage(
-            Environment.StagingBuffer.Handle,
-            Environment.Texture.Handle,
+            Environment.Device.StagingBuffer.Handle,
+            Environment.Device.Texture.Handle,
             (uint32)bitmap->Width,
             (uint32)bitmap->Height);
         TransitionImageLayout(
-            Environment.Texture.Handle,
+            Environment.Device.Texture.Handle,
             VK_FORMAT_R8G8B8A8_SRGB,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -457,7 +427,7 @@ namespace Rendering
         
         VkImageViewCreateInfo view_info = {};
         view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        view_info.image = Environment.Texture.Handle;
+        view_info.image = Environment.Device.Texture.Handle;
         view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
         view_info.format = VK_FORMAT_R8G8B8A8_SRGB;
         view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -535,10 +505,10 @@ namespace Rendering
 
         Environment = {};
         
-        Environment.UniformBuffer.Size = 1 * KILOBYTES;
-        Environment.VertexBuffer.Size = 1 * KILOBYTES;
-        Environment.StagingBuffer.Size = 64 * KILOBYTES;
-        Environment.Texture.Size = 64 * KILOBYTES;
+        Environment.Device.UniformBuffer.Size = 1 * KILOBYTES;
+        Environment.Device.VertexBuffer.Size = 1 * KILOBYTES;
+        Environment.Device.StagingBuffer.Size = 64 * KILOBYTES;
+        Environment.Device.Texture.Size = 64 * KILOBYTES;
         
         success = Init::CreateInstance(&config, &debug_info, &Environment.Instance);
         if (!success)
@@ -584,9 +554,6 @@ namespace Rendering
             return false;
         }
 
-        success = CreateBuffers(&Environment.Device);
-        if (!success) {return false;}
-
         success = Init::CreateSwapchain(
             &Environment);
         if (!success)
@@ -627,8 +594,8 @@ namespace Rendering
         
         success = CreateVertexBuffer(
             &Environment.Device,
-            &Environment.VertexBuffer.Handle,
-            &Environment.VertexBuffer.Memory);
+            &Environment.Device.VertexBuffer.Handle,
+            &Environment.Device.VertexBuffer.Memory);
         if (!success)
         {
             Error("[Error] Failed to create vertex buffer.\n");
@@ -651,7 +618,7 @@ namespace Rendering
 
         success = Init::CreateCommandBuffers(
             &Environment,
-            Environment.VertexBuffer.Handle);
+            Environment.Device.VertexBuffer.Handle);
         if (!success)
         {
             Error("[Error] Failed to create command buffers.\n");
@@ -684,7 +651,7 @@ namespace Rendering
         void* data;
         vkMapMemory(
             Environment.Device.LogicalDevice,
-            Environment.UniformBuffer.Memory,
+            Environment.Device.UniformBuffer.Memory,
             0,
             sizeof(ubo),
             0,
@@ -692,7 +659,7 @@ namespace Rendering
         memcpy(data, &ubo, sizeof(ubo));
         vkUnmapMemory(
             Environment.Device.LogicalDevice,
-            Environment.UniformBuffer.Memory);
+            Environment.Device.UniformBuffer.Memory);
 
     }
     
