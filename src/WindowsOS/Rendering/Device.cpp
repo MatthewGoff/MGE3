@@ -75,10 +75,7 @@ FindMemoryType:
 Find a type of memory (available on physical_device) which has the desired properties provided
 by param "properties"
 */
-bool Device::FindMemoryType(
-    uint32 typeFilter,
-    VkMemoryPropertyFlags properties,
-    uint32 &out)
+bool Device::FindMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties, uint32 &out)
 {
     VkPhysicalDeviceMemoryProperties mem_properties;
     vkGetPhysicalDeviceMemoryProperties(PhysicalDevice, &mem_properties);
@@ -131,11 +128,7 @@ bool Device::AllocateDeviceMemory(
     Info(".\n");
     
     // for reference: vkFreeMemory(logical_device, buffer_memory, nullptr)
-    result = vkAllocateMemory(
-        LogicalDevice,
-        &alloc_info,
-        nullptr,
-        allocation);
+    result = vkAllocateMemory(LogicalDevice, &alloc_info, nullptr, allocation);
     if (result != VK_SUCCESS) {return false;}
     
     vkDestroyBuffer(LogicalDevice, model_buffer, nullptr);
@@ -155,27 +148,14 @@ bool Device::BindBuffer(
     create_info.usage = usage;
     create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     
-    VkResult result = vkCreateBuffer(
-        LogicalDevice,
-        &create_info,
-        nullptr,
-        buffer);
-    if (result != VK_SUCCESS)
-    {
-        return false;
-    }
+    VkResult result = vkCreateBuffer(LogicalDevice, &create_info, nullptr, buffer);
+    if (result != VK_SUCCESS) {return false;}
     
     VkMemoryRequirements mem_requirements;
-    vkGetBufferMemoryRequirements(
-        LogicalDevice,
-        *buffer,
-        &mem_requirements);
+    vkGetBufferMemoryRequirements(LogicalDevice, *buffer, &mem_requirements);
     
     result = vkBindBufferMemory(LogicalDevice, *buffer, *memory, 0);
-    if (result != VK_SUCCESS)
-    {
-        return false;
-    }
+    if (result != VK_SUCCESS) {return false;}
     
     return true;
 }
@@ -187,25 +167,14 @@ bool Device::CreateBuffer(
     VkBuffer* buffer,
     VkDeviceMemory* buffer_memory)
 {
-    AllocateDeviceMemory(
-        size,
-        usage,
-        properties,
-        buffer_memory);
+    AllocateDeviceMemory(size, usage, properties, buffer_memory);
         
-    BindBuffer(
-        size,
-        usage,
-        properties,
-        buffer,
-        buffer_memory);
+    BindBuffer(size, usage, properties, buffer, buffer_memory);
     
     return true;
 }
 
-bool Device::CreateImageAllocation(
-    uint64 size,
-    VkDeviceMemory* allocation)
+bool Device::CreateImageAllocation(uint64 size, VkDeviceMemory* allocation)
 {
     VkImage model_image;
     
@@ -251,21 +220,13 @@ bool Device::CreateImageAllocation(
     Info(alloc_info.allocationSize);
     Info(".\n");
     
-    result = vkAllocateMemory(
-        LogicalDevice,
-        &alloc_info,
-        nullptr,
-        allocation);
+    result = vkAllocateMemory(LogicalDevice, &alloc_info, nullptr, allocation);
     if (result != VK_SUCCESS) {return false;}
     
     return true;
 }
 
-bool Device::BindImage(
-    uint32 width,
-    uint32 height,
-    VkImage* image,
-    VkDeviceMemory* image_memory)
+bool Device::BindImage(uint32 width, uint32 height, VkImage* image, VkDeviceMemory* image_memory)
 {
     VkImageCreateInfo image_info = {};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -287,10 +248,7 @@ bool Device::BindImage(
     if (result != VK_SUCCESS) {return false;}
     
     result = vkBindImageMemory(LogicalDevice, *image, *image_memory, 0);
-    if (result != VK_SUCCESS)
-    {
-        return false;
-    }
+    if (result != VK_SUCCESS) {return false;}
     
     return true;
 }
@@ -303,9 +261,12 @@ bool Device::CreateImage(
     VkDeviceMemory* image_memory)
 {
     bool success;
+    
     success = CreateImageAllocation(size, image_memory);
-        
+    if (!success) {return false;}
+    
     success = BindImage(width, height, image, image_memory);
+    if (!success) {return false;}
     
     return true;
 }
