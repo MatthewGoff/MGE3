@@ -3,6 +3,9 @@
 
 #include <vulkan.h>
 
+// todo: remove these src/Engine/ imports. Used for opening bitmap and bitmap struct
+#include "Engine\Engine.h"
+
 namespace WindowsOS {
 namespace Rendering
 {
@@ -129,6 +132,8 @@ namespace Rendering
             VkMemoryPropertyFlags properties,
             uint32 &out);
 
+        bool CreateImage(uint32 width, uint32 height, uint64 size, VkImage* image, VkDeviceMemory* image_memory);
+
         VkPhysicalDeviceProperties PhysicalProperties;
 
         private:
@@ -163,16 +168,8 @@ namespace Rendering
         VkDescriptorSetLayout DescriptorSetLayout;
         VkDescriptorSet DescriptorSet;
         VkDescriptorPool DescriptorPool;
-
-        VkBuffer UniformBuffer;
-        VkDeviceMemory UniformBufferMemory;
-
-        VkBuffer VertexBuffer;
-        VkDeviceMemory VertexBufferMemory;
         
-        VkImage Texture;
         VkImageView TextureView;
-        VkDeviceMemory TextureMemory;
         VkSampler TextureSampler;
        
         // Objects with one instance per swapchain image

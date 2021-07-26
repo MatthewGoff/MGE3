@@ -3,6 +3,9 @@
 
 #include "Struct.h"
 
+// todo: remove these src/Engine/ imports. Used for opening bitmap and bitmap struct
+#include "Engine\Engine.h"
+
 namespace WindowsOS {
 namespace Rendering {
 
@@ -138,6 +141,10 @@ bool Device::CreateBuffer(
     alloc_info.allocationSize = mem_requirements.size;
     alloc_info.memoryTypeIndex = memory_type;
     
+    Info("[Info] Buffer size = ");
+    Info(alloc_info.allocationSize);
+    Info(".\n");
+    
     // for reference: vkFreeMemory(logical_device, buffer_memory, nullptr)
     result = vkAllocateMemory(
         LogicalDevice,
@@ -150,6 +157,71 @@ bool Device::CreateBuffer(
     }
     
     result = vkBindBufferMemory(LogicalDevice, *buffer, *buffer_memory, 0);
+    if (result != VK_SUCCESS)
+    {
+        return false;
+    }
+    
+    return true;
+}
+
+bool Device::CreateImage(uint32 width, uint32 height, uint64 size, VkImage* image, VkDeviceMemory* image_memory)
+{
+    VkImageCreateInfo image_info = {};
+    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.extent.width = width;
+    image_info.extent.height = height;
+    image_info.extent.depth = 1;
+    image_info.mipLevels = 1;
+    image_info.arrayLayers = 1;
+    image_info.format = VK_FORMAT_R8G8B8A8_SRGB;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.flags = 0; // Optional
+
+    VkResult result = vkCreateImage(LogicalDevice, &image_info, nullptr, image);
+    if (result != VK_SUCCESS) {return false;}
+    
+    VkMemoryRequirements memory_requirements;
+    vkGetImageMemoryRequirements(LogicalDevice, *image, &memory_requirements);
+    Assert(size >= memory_requirements.size);
+    
+    bool success;
+    uint32 memory_type;
+    success = FindMemoryType(
+        memory_requirements.memoryTypeBits,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        memory_type);
+    if (!success)
+    {
+        return false;
+    }
+
+    VkMemoryAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.allocationSize = size;
+    alloc_info.memoryTypeIndex = memory_type;
+    
+    Info("[Info] Image size = ");
+    Info(alloc_info.allocationSize);
+    Info(".\n");
+    
+    result = vkAllocateMemory(
+        LogicalDevice,
+        &alloc_info,
+        nullptr,
+        image_memory);
+    if (result != VK_SUCCESS)
+    {
+        return false;
+        // for reference: "failed to allocate image memory"
+    }
+    
+    result = vkBindImageMemory(LogicalDevice, *image, *image_memory, 0);
     if (result != VK_SUCCESS)
     {
         return false;

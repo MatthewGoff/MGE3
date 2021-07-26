@@ -31,7 +31,7 @@ namespace Init
         VulkanEnvironment* env,
         VkDescriptorSetLayout* descriptor_set_layouts);
         
-    bool CreateCommandBuffers(VulkanEnvironment* env);
+    bool CreateCommandBuffers(VulkanEnvironment* env, VkBuffer vertex_buffer);
 
     bool CreateVKSemaphore(
         VkDevice logical_device_handle,

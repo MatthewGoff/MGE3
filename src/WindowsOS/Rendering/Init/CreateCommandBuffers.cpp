@@ -31,7 +31,7 @@ namespace Init
         return true;
     }
         
-    bool CreateCommandBuffers(VulkanEnvironment* env)
+    bool CreateCommandBuffers(VulkanEnvironment* env, VkBuffer vertex_buffer)
     {
         bool success = CreateFramebuffers(env);
         if (!success)
@@ -88,7 +88,7 @@ namespace Init
                 VK_PIPELINE_BIND_POINT_GRAPHICS,
                 env->Pipeline);
             
-            VkBuffer buffers[] = {env->VertexBuffer};
+            VkBuffer buffers[] = {vertex_buffer};
             VkDeviceSize offsets[] = {0};
             vkCmdBindVertexBuffers(env->CommandBuffers[i], 0, 1, buffers, offsets);
 

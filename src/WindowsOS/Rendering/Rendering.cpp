@@ -4,6 +4,7 @@
 //#include "..\WindowsOS.h" // included by vulkan with win32 definition
 #include "Init\Init.h"
 #include "Struct.h"
+#include "MyDeviceMemory.h"
 
 // todo: remove these src/Engine/ imports. Used for opening bitmap and bitmap struct
 #include "Engine\Engine.h"
@@ -12,6 +13,7 @@ namespace WindowsOS {
 namespace Rendering
 {
     VulkanEnvironment Environment;
+    MyDeviceMemory Memory;
 
     VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
         VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -79,6 +81,12 @@ namespace Rendering
         config->DeviceExtensions = new char*[] {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
     }
 
+    bool CreateBuffers(Device* device)
+    {
+    
+        return true;
+    }
+    
     bool CreateVertexBuffer(
         Device* device,
         VkBuffer* vertex_buffer,
@@ -99,7 +107,7 @@ namespace Rendering
         int vertices_size = vertices_count * sizeof(vertices[0]);
                 
         bool success = device->CreateBuffer(
-            vertices_size,
+            Memory.VertexBufferSize,//vertices_size,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
             vertex_buffer,
@@ -122,11 +130,11 @@ namespace Rendering
         VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
         bool success = env->Device.CreateBuffer(
-            bufferSize,
+            Memory.UniformBufferSize,//bufferSize,
             VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-            &env->UniformBuffer,
-            &env->UniformBufferMemory);
+            &Memory.UniformBuffer,
+            &Memory.UniformBufferMemory);
         if (!success)
         {
             return false;
@@ -240,7 +248,7 @@ namespace Rendering
         }
 
         VkDescriptorBufferInfo buffer_info = {};
-        buffer_info.buffer = env->UniformBuffer;
+        buffer_info.buffer = Memory.UniformBuffer;
         buffer_info.offset = 0;
         buffer_info.range = sizeof(UniformBufferObject);
         
@@ -416,74 +424,22 @@ namespace Rendering
     
     bool CreateImage(VulkanEnvironment* env, Bitmap* bitmap)
     {
-        // Part 1: Create Vulkan Image object        
-        VkImageCreateInfo image_info = {};
-        image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        image_info.imageType = VK_IMAGE_TYPE_2D;
-        image_info.extent.width = (uint32)bitmap->Width;
-        image_info.extent.height = (uint32)bitmap->Height;
-        image_info.extent.depth = 1;
-        image_info.mipLevels = 1;
-        image_info.arrayLayers = 1;
-        image_info.format = VK_FORMAT_R8G8B8A8_SRGB;
-        image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
-        image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-        image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        image_info.samples = VK_SAMPLE_COUNT_1_BIT;
-        image_info.flags = 0; // Optional
-
-        VkResult result = vkCreateImage(env->Device.LogicalDevice, &image_info, nullptr, &env->Texture);
-        if (result != VK_SUCCESS)
-        {
-            return false;
-            // for reference: "failed to create image"
-        }
-        
-        VkMemoryRequirements memory_requirements;
-        vkGetImageMemoryRequirements(env->Device.LogicalDevice, env->Texture, &memory_requirements);
-        
-        uint32 memory_type;
-        bool success = env->Device.FindMemoryType(
-            memory_requirements.memoryTypeBits,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            memory_type);
-        if (!success)
-        {
-            return false;
-        }
-    
-        VkMemoryAllocateInfo alloc_info = {};
-        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        alloc_info.allocationSize = memory_requirements.size;
-        alloc_info.memoryTypeIndex = memory_type;
-        
-        result = vkAllocateMemory(
-            env->Device.LogicalDevice,
-            &alloc_info,
-            nullptr,
-            &env->TextureMemory);
-        if (result != VK_SUCCESS)
-        {
-            return false;
-            // for reference: "failed to allocate image memory"
-        }
-        
-        result = vkBindImageMemory(env->Device.LogicalDevice, env->Texture, env->TextureMemory, 0);
-        if (result != VK_SUCCESS)
-        {
-            return false;
-        }
+        bool success;
+        VkResult result;
+        success = env->Device.CreateImage(bitmap->Width, bitmap->Height, Memory.TextureSize, &Memory.Texture, &Memory.TextureMemory);
 
         // Part 2: Move memory to device
         
+        VkMemoryRequirements memory_requirements;
+        vkGetImageMemoryRequirements(env->Device.LogicalDevice, Memory.Texture, &memory_requirements);
+            
         int image_size = memory_requirements.size;
         
-        VkBuffer stagingBuffer;
-        VkDeviceMemory stagingBufferMemory;
+        VkBuffer stagingBuffer = Memory.StagingBuffer;
+        VkDeviceMemory stagingBufferMemory = Memory.StagingBufferMemory;
         
         env->Device.CreateBuffer(
-            image_size,
+            Memory.StagingBufferSize,//image_size,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
             VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
             &stagingBuffer,
@@ -495,17 +451,17 @@ namespace Rendering
         vkUnmapMemory(env->Device.LogicalDevice, stagingBufferMemory);
 
         TransitionImageLayout(
-            env->Texture,
+            Memory.Texture,
             VK_FORMAT_R8G8B8A8_SRGB,
             VK_IMAGE_LAYOUT_UNDEFINED,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         CopyBufferToImage(
             stagingBuffer,
-            env->Texture,
+            Memory.Texture,
             (uint32)bitmap->Width,
             (uint32)bitmap->Height);
         TransitionImageLayout(
-            env->Texture,
+            Memory.Texture,
             VK_FORMAT_R8G8B8A8_SRGB,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
             VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -514,7 +470,7 @@ namespace Rendering
         
         VkImageViewCreateInfo view_info = {};
         view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        view_info.image = env->Texture;
+        view_info.image = Memory.Texture;
         view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
         view_info.format = VK_FORMAT_R8G8B8A8_SRGB;
         view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -590,6 +546,9 @@ namespace Rendering
 
         bool success;
 
+        Environment = {};
+        Memory = {};
+        
         success = Init::CreateInstance(&config, &debug_info, &Environment.Instance);
         if (!success)
         {
@@ -675,8 +634,8 @@ namespace Rendering
         
         success = CreateVertexBuffer(
             &Environment.Device,
-            &Environment.VertexBuffer,
-            &Environment.VertexBufferMemory);
+            &Memory.VertexBuffer,
+            &Memory.VertexBufferMemory);
         if (!success)
         {
             Error("[Error] Failed to create vertex buffer.\n");
@@ -705,7 +664,8 @@ namespace Rendering
         }
 
         success = Init::CreateCommandBuffers(
-            &Environment);
+            &Environment,
+            Memory.VertexBuffer);
         if (!success)
         {
             Error("[Error] Failed to create command buffers.\n");
@@ -738,7 +698,7 @@ namespace Rendering
         void* data;
         vkMapMemory(
             Environment.Device.LogicalDevice,
-            Environment.UniformBufferMemory,
+            Memory.UniformBufferMemory,
             0,
             sizeof(ubo),
             0,
@@ -746,7 +706,7 @@ namespace Rendering
         memcpy(data, &ubo, sizeof(ubo));
         vkUnmapMemory(
             Environment.Device.LogicalDevice,
-            Environment.UniformBufferMemory);
+            Memory.UniformBufferMemory);
 
     }
     
