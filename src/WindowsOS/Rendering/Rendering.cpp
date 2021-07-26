@@ -80,11 +80,6 @@ namespace Rendering
         config->DeviceExtensions = new char*[] {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
     }
 
-    bool CreateAllocations(Device* device)
-    {
-        return true;
-    }
-
     bool CreateBuffers(Device* device)
     {
         bool success;
@@ -139,15 +134,6 @@ namespace Rendering
         memcpy(data, vertices, vertices_size);
         vkUnmapMemory(device->LogicalDevice, *vertex_buffer_memory);
 
-        return true;
-    }
-
-    bool CreateUniformBuffer(VulkanEnvironment* env)
-    {
-        VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-
-        
-        
         return true;
     }
 
@@ -586,7 +572,6 @@ namespace Rendering
             return false;
         }
 
-        
         success = Environment.Device.CreateDevice(
             &config,
             physical_device,
@@ -598,9 +583,6 @@ namespace Rendering
             Error("[Error] Failed to create logical device.\n");
             return false;
         }
-        
-        success = CreateAllocations(&Environment.Device);
-        if (!success) {return false;}
 
         success = CreateBuffers(&Environment.Device);
         if (!success) {return false;}
@@ -650,13 +632,6 @@ namespace Rendering
         if (!success)
         {
             Error("[Error] Failed to create vertex buffer.\n");
-            return false;
-        }
-
-        success = CreateUniformBuffer(&Environment);
-        if (!success)
-        {
-            Error("[Error] Failed to create uniform buffers.\n");
             return false;
         }
 
