@@ -1,10 +1,7 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan.h>
 
-#include "Struct.h"
-
-// todo: remove these src/Engine/ imports. Used for opening bitmap and bitmap struct
-#include "Engine\Engine.h"
+#include "Device.h"
 
 namespace WindowsOS {
 namespace Rendering {
@@ -100,12 +97,57 @@ bool Device::FindMemoryType(
     //for reference: "failed to find suitable memory type!"
 }
 
-bool Device::CreateBuffer(
+bool Device::AllocateDeviceMemory(
+    VkDeviceSize size,
+    VkBufferUsageFlags usage,
+    VkMemoryPropertyFlags properties,
+    VkDeviceMemory* allocation)
+{
+    VkBuffer model_buffer;
+    
+    VkBufferCreateInfo create_info = {};
+    create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    create_info.size = size;
+    create_info.usage = usage;
+    create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    
+    VkResult result = vkCreateBuffer(LogicalDevice, &create_info, nullptr, &model_buffer);
+    if (result != VK_SUCCESS) {return false;}
+    
+    VkMemoryRequirements mem_req;
+    vkGetBufferMemoryRequirements(LogicalDevice, model_buffer, &mem_req);
+    
+    uint32 memory_type;
+    bool success = FindMemoryType(mem_req.memoryTypeBits, properties, memory_type);
+    if (!success) {return false;}
+    
+    VkMemoryAllocateInfo alloc_info = {};
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.allocationSize = mem_req.size;
+    alloc_info.memoryTypeIndex = memory_type;
+    
+    Info("[Info] Buffer size = ");
+    Info(alloc_info.allocationSize);
+    Info(".\n");
+    
+    // for reference: vkFreeMemory(logical_device, buffer_memory, nullptr)
+    result = vkAllocateMemory(
+        LogicalDevice,
+        &alloc_info,
+        nullptr,
+        allocation);
+    if (result != VK_SUCCESS) {return false;}
+    
+    vkDestroyBuffer(LogicalDevice, model_buffer, nullptr);
+    return true;
+}
+
+bool Device::BindBuffer(
     VkDeviceSize size,
     VkBufferUsageFlags usage,
     VkMemoryPropertyFlags properties,
     VkBuffer* buffer,
-    VkDeviceMemory* buffer_memory)
+    VkDeviceMemory* memory)
 {
     VkBufferCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -129,34 +171,7 @@ bool Device::CreateBuffer(
         *buffer,
         &mem_requirements);
     
-    uint32 memory_type;
-    bool success = FindMemoryType(
-        mem_requirements.memoryTypeBits,
-        properties,
-        memory_type);
-    if (!success) {return false;}
-    
-    VkMemoryAllocateInfo alloc_info = {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    alloc_info.allocationSize = mem_requirements.size;
-    alloc_info.memoryTypeIndex = memory_type;
-    
-    Info("[Info] Buffer size = ");
-    Info(alloc_info.allocationSize);
-    Info(".\n");
-    
-    // for reference: vkFreeMemory(logical_device, buffer_memory, nullptr)
-    result = vkAllocateMemory(
-        LogicalDevice,
-        &alloc_info,
-        nullptr,
-        buffer_memory);
-    if (result != VK_SUCCESS)
-    {
-        return false;
-    }
-    
-    result = vkBindBufferMemory(LogicalDevice, *buffer, *buffer_memory, 0);
+    result = vkBindBufferMemory(LogicalDevice, *buffer, *memory, 0);
     if (result != VK_SUCCESS)
     {
         return false;
@@ -165,13 +180,40 @@ bool Device::CreateBuffer(
     return true;
 }
 
-bool Device::CreateImage(uint32 width, uint32 height, uint64 size, VkImage* image, VkDeviceMemory* image_memory)
+bool Device::CreateBuffer(
+    VkDeviceSize size,
+    VkBufferUsageFlags usage,
+    VkMemoryPropertyFlags properties,
+    VkBuffer* buffer,
+    VkDeviceMemory* buffer_memory)
 {
+    AllocateDeviceMemory(
+        size,
+        usage,
+        properties,
+        buffer_memory);
+        
+    BindBuffer(
+        size,
+        usage,
+        properties,
+        buffer,
+        buffer_memory);
+    
+    return true;
+}
+
+bool Device::CreateImageAllocation(
+    uint64 size,
+    VkDeviceMemory* allocation)
+{
+    VkImage model_image;
+    
     VkImageCreateInfo image_info = {};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image_info.imageType = VK_IMAGE_TYPE_2D;
-    image_info.extent.width = width;
-    image_info.extent.height = height;
+    image_info.extent.width = 32; // arbitrary
+    image_info.extent.height = 32; // arbitrary
     image_info.extent.depth = 1;
     image_info.mipLevels = 1;
     image_info.arrayLayers = 1;
@@ -183,12 +225,11 @@ bool Device::CreateImage(uint32 width, uint32 height, uint64 size, VkImage* imag
     image_info.samples = VK_SAMPLE_COUNT_1_BIT;
     image_info.flags = 0; // Optional
 
-    VkResult result = vkCreateImage(LogicalDevice, &image_info, nullptr, image);
+    VkResult result = vkCreateImage(LogicalDevice, &image_info, nullptr, &model_image);
     if (result != VK_SUCCESS) {return false;}
     
     VkMemoryRequirements memory_requirements;
-    vkGetImageMemoryRequirements(LogicalDevice, *image, &memory_requirements);
-    Assert(size >= memory_requirements.size);
+    vkGetImageMemoryRequirements(LogicalDevice, model_image, &memory_requirements);
     
     bool success;
     uint32 memory_type;
@@ -214,18 +255,57 @@ bool Device::CreateImage(uint32 width, uint32 height, uint64 size, VkImage* imag
         LogicalDevice,
         &alloc_info,
         nullptr,
-        image_memory);
-    if (result != VK_SUCCESS)
-    {
-        return false;
-        // for reference: "failed to allocate image memory"
-    }
+        allocation);
+    if (result != VK_SUCCESS) {return false;}
+    
+    return true;
+}
+
+bool Device::BindImage(
+    uint32 width,
+    uint32 height,
+    VkImage* image,
+    VkDeviceMemory* image_memory)
+{
+    VkImageCreateInfo image_info = {};
+    image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_info.imageType = VK_IMAGE_TYPE_2D;
+    image_info.extent.width = width;
+    image_info.extent.height = height;
+    image_info.extent.depth = 1;
+    image_info.mipLevels = 1;
+    image_info.arrayLayers = 1;
+    image_info.format = VK_FORMAT_R8G8B8A8_SRGB;
+    image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+    image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_info.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+    image_info.flags = 0; // Optional
+
+    VkResult result = vkCreateImage(LogicalDevice, &image_info, nullptr, image);
+    if (result != VK_SUCCESS) {return false;}
     
     result = vkBindImageMemory(LogicalDevice, *image, *image_memory, 0);
     if (result != VK_SUCCESS)
     {
         return false;
     }
+    
+    return true;
+}
+
+bool Device::CreateImage(
+    uint32 width,
+    uint32 height,
+    uint64 size,
+    VkImage* image,
+    VkDeviceMemory* image_memory)
+{
+    bool success;
+    success = CreateImageAllocation(size, image_memory);
+        
+    success = BindImage(width, height, image, image_memory);
     
     return true;
 }

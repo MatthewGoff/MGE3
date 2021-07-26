@@ -1,4 +1,5 @@
 #include "..\Struct.h"
+#include "..\VulkanEnvironment.h"
 #include PLATFORM_HEADER
 
 namespace WindowsOS { namespace Rendering {

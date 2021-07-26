@@ -2,6 +2,7 @@
 #define INIT_H
 
 #include "..\Struct.h"
+#include "..\VulkanEnvironment.h"
 
 namespace WindowsOS { namespace Rendering {
 namespace Init
