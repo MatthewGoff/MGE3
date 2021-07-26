@@ -505,11 +505,6 @@ namespace Rendering
 
         Environment = {};
         
-        Environment.Device.UniformBuffer.Size = 1 * KILOBYTES;
-        Environment.Device.VertexBuffer.Size = 1 * KILOBYTES;
-        Environment.Device.StagingBuffer.Size = 64 * KILOBYTES;
-        Environment.Device.Texture.Size = 64 * KILOBYTES;
-        
         success = Init::CreateInstance(&config, &debug_info, &Environment.Instance);
         if (!success)
         {

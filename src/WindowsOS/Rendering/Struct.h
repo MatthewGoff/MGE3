@@ -107,6 +107,8 @@ namespace Rendering
         uint64 Size;
         VkDeviceMemory Memory;
         uint64 Offset;
+        VkBufferUsageFlags Usage;
+        VkMemoryPropertyFlags Properties;
     };
 
     struct Image
@@ -115,6 +117,8 @@ namespace Rendering
         uint64 Size;
         VkDeviceMemory Memory;
         uint64 Offset;
+        VkImageUsageFlags Usage;
+        VkMemoryPropertyFlags Properties;
     };
 }
 }

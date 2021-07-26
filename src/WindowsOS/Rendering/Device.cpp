@@ -137,70 +137,55 @@ bool Device::AllocateDeviceMemory(
     return true;
 }
 
-bool Device::BindBuffer(
-    VkDeviceSize size,
-    VkBufferUsageFlags usage,
-    VkMemoryPropertyFlags properties,
-    VkBuffer* buffer,
-    VkDeviceMemory* memory)
+bool Device::CreateBuffer(Buffer* buffer)
 {
+    AllocateDeviceMemory(buffer->Size, buffer->Usage, buffer->Properties, &buffer->Memory);
+        
     VkBufferCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    create_info.size = size;
-    create_info.usage = usage;
+    create_info.size = buffer->Size;
+    create_info.usage = buffer->Usage;
     create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     
-    VkResult result = vkCreateBuffer(LogicalDevice, &create_info, nullptr, buffer);
+    VkResult result = vkCreateBuffer(LogicalDevice, &create_info, nullptr, &buffer->Handle);
     if (result != VK_SUCCESS) {return false;}
     
-    VkMemoryRequirements mem_requirements;
-    vkGetBufferMemoryRequirements(LogicalDevice, *buffer, &mem_requirements);
-    
-    result = vkBindBufferMemory(LogicalDevice, *buffer, *memory, 0);
+    result = vkBindBufferMemory(LogicalDevice, buffer->Handle, buffer->Memory, 0);
     if (result != VK_SUCCESS) {return false;}
-    
-    return true;
-}
-
-bool Device::CreateBuffer(
-    VkDeviceSize size,
-    VkBufferUsageFlags usage,
-    VkMemoryPropertyFlags properties,
-    VkBuffer* buffer,
-    VkDeviceMemory* buffer_memory)
-{
-    AllocateDeviceMemory(size, usage, properties, buffer_memory);
-        
-    BindBuffer(size, usage, properties, buffer, buffer_memory);
     
     return true;
 }
 
 bool Device::InitializeBuffers()
 {
+    UniformBuffer.Size = 1 * KILOBYTES;
+    UniformBuffer.Usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    UniformBuffer.Properties =
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+        | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    
+    VertexBuffer.Size = 1 * KILOBYTES;
+    VertexBuffer.Usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    VertexBuffer.Properties =
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+        | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    StagingBuffer.Size = 64 * KILOBYTES;
+    StagingBuffer.Usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    StagingBuffer.Properties =
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+        | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    Texture.Size = 64 * KILOBYTES;
+            
     bool success;
-    success = CreateBuffer(
-        VertexBuffer.Size,//vertices_size,
-        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        &VertexBuffer.Handle,
-        &VertexBuffer.Memory);
+    success = CreateBuffer(&VertexBuffer);
     if (!success) {return false;}
     
-    success = CreateBuffer(
-        UniformBuffer.Size,//bufferSize,
-        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        &UniformBuffer.Handle,
-        &UniformBuffer.Memory);
+    success = CreateBuffer(&UniformBuffer);
     if (!success) {return false;}
     
-    success = CreateBuffer(
-        StagingBuffer.Size,//image_size,
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        &StagingBuffer.Handle,
-        &StagingBuffer.Memory);
+    success = CreateBuffer(&StagingBuffer);
     if (!success) {return false;}
     
     return true;

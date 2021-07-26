@@ -28,12 +28,7 @@ class Device
         VkQueue* graphics_queue,
         VkQueue* present_queue);
 
-    bool CreateBuffer(
-        VkDeviceSize size,
-        VkBufferUsageFlags usage,
-        VkMemoryPropertyFlags properties,
-        VkBuffer* buffer,
-        VkDeviceMemory* buffer_memory);
+    bool CreateBuffer(Buffer* buffer);
 
     bool CreateImage(
         uint32 width,
@@ -56,13 +51,6 @@ class Device
         VkBufferUsageFlags usage,
         VkMemoryPropertyFlags properties,
         VkDeviceMemory* allocation);
-
-    bool BindBuffer(
-        VkDeviceSize size,
-        VkBufferUsageFlags usage,
-        VkMemoryPropertyFlags properties,
-        VkBuffer* buffer,
-        VkDeviceMemory* memory);
         
     bool CreateImageAllocation(uint64 size, VkDeviceMemory* image_memory);
 
