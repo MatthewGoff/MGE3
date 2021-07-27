@@ -202,6 +202,15 @@ namespace Init
         QueueFamilyConfig* queue_family_config,
         SwapchainConfig* swapchain_config)
     {
+        /*
+        uint64 size = Com::MemoryAvailable(physical_device_handle);
+        uint64 requirement = config->PhysicalMemReq;
+        if ((unsigned) size < (unsigned) 2 * requirement)
+        {
+            return false;
+        }
+        */
+
         VkPhysicalDeviceProperties properties;
         vkGetPhysicalDeviceProperties(physical_device_handle, &properties);
 
