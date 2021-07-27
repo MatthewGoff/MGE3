@@ -91,14 +91,20 @@ namespace Rendering
 
     struct VulkanConfig
     {
-        int ValidationLayersCount;
-        char** ValidationLayers;
-
-        int VulkanExtensionsCount;
-        char** VulkanExtensions;
+        const uint64 PhysicalMemReq = 32 * MEGABYTES;
         
-        int DeviceExtensionsCount;
-        char** DeviceExtensions;
+        const int ValidationLayersCount = 1;
+        const char* ValidationLayers[1] = {"VK_LAYER_KHRONOS_validation"};
+
+        const int VulkanExtensionsCount = 3;
+        const char* VulkanExtensions[3] = {
+            "VK_KHR_surface",
+            "VK_KHR_win32_surface",
+            "VK_EXT_debug_utils"
+        };
+        
+        const int DeviceExtensionsCount = 1;
+        const char* DeviceExtensions[1] = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
     };
 
     struct Buffer

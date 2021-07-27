@@ -62,24 +62,6 @@ namespace Rendering
         debug_info->pfnUserCallback = DebugCallback;
     }
 
-    void GetConfig(VulkanConfig* config)
-    {
-        *config = {};
-        
-        config->ValidationLayersCount = 1;
-        config->ValidationLayers = new char*[] {"VK_LAYER_KHRONOS_validation"};
-
-        config->VulkanExtensionsCount = 3;
-        config->VulkanExtensions = new char*[] {
-            "VK_KHR_surface",
-            "VK_KHR_win32_surface",
-            "VK_EXT_debug_utils"
-        };
-        
-        config->DeviceExtensionsCount = 1;
-        config->DeviceExtensions = new char*[] {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
-    }
-    
     bool CreateVertexBuffer(
         Device* device,
         VkBuffer* vertex_buffer,
@@ -499,7 +481,6 @@ namespace Rendering
         GetDebugInfo(&debug_info);
 
         VulkanConfig config;
-        GetConfig(&config);
 
         bool success;
 
