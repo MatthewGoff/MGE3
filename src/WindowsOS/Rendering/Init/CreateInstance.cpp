@@ -5,7 +5,7 @@ namespace WindowsOS { namespace Rendering {
 namespace Init
 {
     bool SetupDebugMessenger(
-        VkInstance vulkan_handle,
+        VkInstance vk_instance,
         VulkanConfig* config,
         VkDebugUtilsMessengerCreateInfoEXT* debug_info)
     {
@@ -14,7 +14,7 @@ namespace Init
         // Tutorial says we have to find this function at runtime.
         PFN_vkCreateDebugUtilsMessengerEXT func =
             (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(
-                vulkan_handle,
+                vk_instance,
                 "vkCreateDebugUtilsMessengerEXT");
 
         if (func == nullptr)
@@ -25,7 +25,7 @@ namespace Init
 
         VkDebugUtilsMessengerEXT debug_messenger; //We would store this if we wanted to conduct cleanup.
         VkResult result = func(
-            vulkan_handle,
+            vk_instance,
             debug_info,
             nullptr,
             &debug_messenger);
@@ -85,7 +85,7 @@ namespace Init
     bool CreateInstance(
         VulkanConfig* config,
         VkDebugUtilsMessengerCreateInfoEXT* debug_info,
-        VkInstance* vulkan_handle)
+        VkInstance* vk_instance)
     {
         if (!ValidationLayersSupported(config))
         {
@@ -112,7 +112,7 @@ namespace Init
         VkResult result = vkCreateInstance(
             &createInfo,
             nullptr,
-            vulkan_handle);
+            vk_instance);
         
         if (result != VK_SUCCESS)
         {
@@ -120,7 +120,7 @@ namespace Init
             return false;
         }
         
-        bool success = SetupDebugMessenger(*vulkan_handle, config, debug_info);
+        bool success = SetupDebugMessenger(*vk_instance, config, debug_info);
         if (!success)
         {
             Error("[Error] Failed to setup debug messenger.\n");
