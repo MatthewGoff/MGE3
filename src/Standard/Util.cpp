@@ -46,3 +46,16 @@ void Util::MoveString(char* to, char* from)
     
     *to = 0;
 }
+
+/*
+Determine the next number after <base> which is evenly divisible by <resolution>
+*/
+int Util::Align(int base, int resolution)
+{    
+    int excess = base % resolution;
+    if (excess != 0)
+    {
+        base += resolution - excess;
+    }
+    return base;
+}
