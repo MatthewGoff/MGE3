@@ -1,5 +1,4 @@
-#ifndef INIT_H
-#define INIT_H
+#pragma once
 
 #include "..\Struct.h"
 #include "..\VulkanEnvironment.h"
@@ -39,5 +38,3 @@ namespace MGE { namespace Windows { namespace Rendering { namespace Init
 
 }
 }}}
-
-#endif

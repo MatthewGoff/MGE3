@@ -1,5 +1,4 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#pragma once
 
 //960*540 = 1920*1080 x(1/2)
 //1440*810 = 1920*1080 x(3/4)
@@ -10,5 +9,3 @@
 #define PLATFORM_HEADER "Windows\\Windows.h"
 
 #define BUILD_LOG_LEVEL 5
-
-#endif

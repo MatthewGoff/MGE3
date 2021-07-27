@@ -1,5 +1,4 @@
-#ifndef STRUCT_H
-#define STRUCT_H
+#pragma once
 
 #include <vulkan.h>
 
@@ -126,5 +125,3 @@ namespace MGE { namespace Windows { namespace Rendering
         VkMemoryPropertyFlags Properties;
     };
 }}}
-
-#endif

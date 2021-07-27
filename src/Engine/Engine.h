@@ -1,5 +1,4 @@
-#ifndef ENGINE_H
-#define ENGINE_H
+#pragma once
 
 #include "Engine/struct/Bitmap.h"
 #include "Engine/struct/Sprite.h"
@@ -22,6 +21,4 @@ namespace MGE { namespace Engine {
     // AssetManager.cpp
     void LoadAsset(int id);
     Bitmap* GetAsset(int id);
-} }
-
-#endif
+}}

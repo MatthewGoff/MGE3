@@ -1,5 +1,4 @@
-#ifndef DEVICE_H
-#define DEVICE_H
+#pragma once
 
 #include "Struct.h"
 
@@ -58,5 +57,3 @@ class Device
 };
 
 }}}
-
-#endif

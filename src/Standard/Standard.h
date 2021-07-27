@@ -1,5 +1,4 @@
-#ifndef STANDARD_H
-#define STANDARD_H
+#pragma once
 
 namespace MGE {
 
@@ -52,5 +51,3 @@ namespace String
 }
 
 }
-
-#endif

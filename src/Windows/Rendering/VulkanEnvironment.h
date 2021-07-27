@@ -1,5 +1,4 @@
-#ifndef VULKAN_ENVIRONMENT_H
-#define VULKAN_ENVIRONMENT_H
+#pragma once
 
 #include "Struct.h"
 #include "Device.h"
@@ -42,5 +41,3 @@ struct VulkanEnvironment
 };
 
 }}}
-
-#endif

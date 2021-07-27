@@ -1,5 +1,4 @@
-#ifndef WINDOWS_H
-#define WINDOWS_H
+#pragma once
 
 namespace MGE { namespace Windows
 {
@@ -18,5 +17,3 @@ namespace MGE { namespace Windows
     void Log(int lvl, float var);
     void Log(int lvl, double var);
 }}
-
-#endif

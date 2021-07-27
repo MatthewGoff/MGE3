@@ -1,5 +1,4 @@
-#ifndef SPRITE_H
-#define SPRITE_H
+#pragma once
 
 #include "Bitmap.h"
 
@@ -15,5 +14,3 @@ struct Sprite
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef MEMORY_H
-#define MEMORY_H
+#pragma once
 
 namespace MGE {
 
@@ -38,5 +37,3 @@ struct RootMemory
 };
 
 }
-
-#endif

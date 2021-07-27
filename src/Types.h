@@ -1,5 +1,4 @@
-#ifndef TYPES_H
-#define TYPES_H 
+#pragma once
 
 /*
  * Primative data type convension in this project
@@ -29,5 +28,3 @@ typedef long long int64;
 typedef int int32;
 typedef uint uint32;
 typedef unsigned char byte;
-
-#endif

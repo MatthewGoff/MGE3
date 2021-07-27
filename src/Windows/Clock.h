@@ -1,5 +1,4 @@
-#ifndef CLOCK_H
-#define CLOCK_H
+#pragma once
 
 namespace MGE { namespace Windows { namespace Clock
 {
@@ -7,5 +6,3 @@ namespace MGE { namespace Windows { namespace Clock
     int64 GetTimeMicro();
     int32 GetTimeMilli();
 }}}
-
-#endif

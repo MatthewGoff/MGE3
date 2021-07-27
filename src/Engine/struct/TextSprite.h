@@ -1,5 +1,4 @@
-#ifndef TEXTSPRITE_H
-#define TEXTSPRITE_H
+#pragma once
 
 namespace MGE {
 
@@ -12,5 +11,3 @@ struct TextSprite
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef BITMAP_H
-#define BITMAP_H
+#pragma once
 
 namespace MGE {
 
@@ -11,5 +10,3 @@ struct Bitmap
 };
 
 }
-
-#endif

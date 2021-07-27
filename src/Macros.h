@@ -1,5 +1,4 @@
-#ifndef MACROS_H
-#define MACROS_H
+#pragma once
 
 //#define UINT32_MAX (0xFFFFFFFF)
 
@@ -48,5 +47,3 @@
     #define Fatal(msg)
     #endif
 //}
-
-#endif

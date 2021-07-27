@@ -1,5 +1,4 @@
-#ifndef GLYPH_H
-#define GLYPH_H
+#pragma once
 
 namespace MGE {
 
@@ -11,5 +10,3 @@ struct Glyph
 };
 
 }
-
-#endif
