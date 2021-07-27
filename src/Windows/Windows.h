@@ -2,7 +2,7 @@
 
 namespace MGE { namespace Windows {
     
-//WindowsOS.cpp
+//Windows.cpp
 uint32 ReadEntireFile(
     void* buffer_ptr,
     uint32 buffer_size,
