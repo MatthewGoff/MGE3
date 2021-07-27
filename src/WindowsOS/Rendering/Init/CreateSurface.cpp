@@ -5,21 +5,21 @@ namespace WindowsOS { namespace Rendering {
 namespace Init
 {
     bool CreateSurface(
-        VkInstance vulkan_handle,
-        HINSTANCE instance_handle,
-        HWND window_handle,
-        VkSurfaceKHR* surface_handle)
+        VkInstance vk_instance,
+        HINSTANCE windows_instance,
+        HWND window,
+        VkSurfaceKHR* surface)
     {
         VkWin32SurfaceCreateInfoKHR createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-        createInfo.hwnd = window_handle;
-        createInfo.hinstance = instance_handle;
+        createInfo.hwnd = window;
+        createInfo.hinstance = windows_instance;
         
         VkResult result = vkCreateWin32SurfaceKHR(
-            vulkan_handle,
+            vk_instance,
             &createInfo,
             nullptr,
-            surface_handle);
+            surface);
         if (result != VK_SUCCESS)
         {
             Error("[Error] Vulkan failed to create instance with result:")
