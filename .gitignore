@@ -5,6 +5,8 @@ build/*
 
 */__pycache__/
 
+BuildTools/config.py
+
 # Matt uses /notes/ to store scratchwork, etc.
 notes/
 
