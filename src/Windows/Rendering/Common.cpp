@@ -1,7 +1,6 @@
 #include <vulkan.h>
 
-namespace MGE { namespace Windows { namespace Rendering
-{
+namespace MGE { namespace Windows { namespace Rendering {
 
 uint64 MemoryAvailable(VkPhysicalDevice physical_device)
 {
