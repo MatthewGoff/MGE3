@@ -56,7 +56,7 @@ class Device
 
     bool BindImage(uint32 width, uint32 height, VkImage* image, VkDeviceMemory* image_memory);
         
-    bool FindMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties, uint32 &out);
+    bool FindMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties, uint32* out);
 };
 
 }}

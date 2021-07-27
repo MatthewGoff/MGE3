@@ -77,7 +77,7 @@ FindMemoryType:
 Find a type of memory (available on physical_device) which has the desired properties provided
 by param "properties"
 */
-bool Device::FindMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties, uint32 &out)
+bool Device::FindMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties, uint32* out)
 {
     VkPhysicalDeviceMemoryProperties mem_properties;
     vkGetPhysicalDeviceMemoryProperties(PhysicalDevice, &mem_properties);
@@ -87,7 +87,7 @@ bool Device::FindMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties,
         if ((typeFilter & (1 << i))
             && ((mem_properties.memoryTypes[i].propertyFlags & properties) == properties))
         {
-            out = i;
+            *out = i;
             return true;
         }
     }
@@ -117,7 +117,7 @@ bool Device::AllocateDeviceMemory(
     vkGetBufferMemoryRequirements(LogicalDevice, model_buffer, &mem_req);
     
     uint32 memory_type;
-    bool success = FindMemoryType(mem_req.memoryTypeBits, properties, memory_type);
+    bool success = FindMemoryType(mem_req.memoryTypeBits, properties, &memory_type);
     if (!success) {return false;}
     
     VkMemoryAllocateInfo alloc_info = {};
@@ -222,7 +222,7 @@ bool Device::CreateImageAllocation(uint64 size, VkDeviceMemory* allocation)
     success = FindMemoryType(
         memory_requirements.memoryTypeBits,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        memory_type);
+        &memory_type);
     if (!success)
     {
         return false;
