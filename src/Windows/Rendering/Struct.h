@@ -3,8 +3,7 @@
 
 #include <vulkan.h>
 
-namespace WindowsOS {
-namespace Rendering
+namespace MGE { namespace Windows { namespace Rendering
 {
     
     struct UniformBufferObject
@@ -126,6 +125,6 @@ namespace Rendering
         VkImageUsageFlags Usage;
         VkMemoryPropertyFlags Properties;
     };
-}
-}
+}}}
+
 #endif

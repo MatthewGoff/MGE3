@@ -9,8 +9,8 @@ A list of directories and files which should be compiled. Recursive; Only consid
 def source():
 
     source = []
-    #source += ["src"]
-    source += ["src\\WindowsOS\\Rendering"]
+    source += ["src"]
+    #source += ["src\\WindowsOS\\Rendering"]
     
     return source
 

@@ -1,7 +1,6 @@
 #include <vulkan.h>
 
-namespace WindowsOS { namespace Rendering {
-namespace Init
+namespace MGE { namespace Windows { namespace Rendering { namespace Init
 {
     bool CreateVKSemaphore(
         VkDevice logical_device,
@@ -23,4 +22,4 @@ namespace Init
         return true;
     }
 }
-} }
+}}}

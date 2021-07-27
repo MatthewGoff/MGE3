@@ -6,8 +6,8 @@
 #define WINDOW_WIDTH 1440
 #define WINDOW_HEIGHT 810
 
-#define PLATFORM WindowsOS
-#define PLATFORM_HEADER "WindowsOS\\WindowsOS.h"
+#define PLATFORM Windows
+#define PLATFORM_HEADER "Windows\\Windows.h"
 
 #define BUILD_LOG_LEVEL 5
 

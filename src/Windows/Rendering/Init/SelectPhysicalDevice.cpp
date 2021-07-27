@@ -1,7 +1,6 @@
 #include "..\Struct.h"
 
-namespace WindowsOS { namespace Rendering {
-namespace Init
+namespace MGE { namespace Windows { namespace Rendering { namespace Init
 {
     QueueFamilyConfig FindQueueFamilyConfig(
         VkPhysicalDevice physical_device, 
@@ -288,4 +287,4 @@ namespace Init
         return false;
     }
 }
-} }
+}}}

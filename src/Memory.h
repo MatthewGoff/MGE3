@@ -1,6 +1,8 @@
 #ifndef MEMORY_H
 #define MEMORY_H
 
+namespace MGE {
+
 struct ScreenBuffer
 {
     int Width;
@@ -34,5 +36,7 @@ struct RootMemory
     DebugInfo DebugInfo;
     FileBuffer FileBuffer;
 };
+
+}
 
 #endif

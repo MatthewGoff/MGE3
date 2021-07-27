@@ -1,4 +1,6 @@
 
+namespace MGE {
+
 char* String::ToString(char* buffer, int val)
 {
     // buffer size >= 32
@@ -64,4 +66,6 @@ int String::Compare(char* s1, char* s2)
         s2++;
     }
     return (int)(*s1 - *s2);
+}
+
 }

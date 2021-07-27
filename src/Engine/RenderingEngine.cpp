@@ -1,7 +1,7 @@
 #include "Engine.h"
 
-namespace Engine
-{
+namespace MGE { namespace Engine {
+
     int AverageColors(int c1, int c2, int c3, int c4)
     {
         uint64 a = (uint64)(c1 & 0xFF000000)
@@ -200,4 +200,4 @@ namespace Engine
             runner++;
         }
     }
-}
+}}

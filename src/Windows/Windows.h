@@ -1,7 +1,7 @@
-#ifndef WINDOWSOS_H
-#define WINDOWSOS_H
+#ifndef WINDOWS_H
+#define WINDOWS_H
 
-namespace WindowsOS
+namespace MGE { namespace Windows
 {
     //WindowsOS.cpp
     uint32 ReadEntireFile(
@@ -17,6 +17,6 @@ namespace WindowsOS
     void Log(int lvl, uint64 var);
     void Log(int lvl, float var);
     void Log(int lvl, double var);
-}
+}}
 
 #endif

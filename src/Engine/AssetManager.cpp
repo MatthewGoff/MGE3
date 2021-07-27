@@ -1,5 +1,7 @@
 #include "Engine.h"
 
+namespace MGE {
+
 static Bitmap* asset_location[10]; // Maximum 10 assets
 
 void Engine::LoadAsset(int id)
@@ -28,4 +30,6 @@ void Engine::LoadAsset(int id)
 Bitmap* Engine::GetAsset(int id)
 {
     return asset_location[id];
+}
+
 }

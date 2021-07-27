@@ -3,9 +3,7 @@
 
 #include "Struct.h"
 
-namespace WindowsOS {
-namespace Rendering
-{
+namespace MGE { namespace Windows { namespace Rendering {
     
 class Device
 {
@@ -59,6 +57,6 @@ class Device
     bool FindMemoryType(uint32 typeFilter, VkMemoryPropertyFlags properties, uint32* out);
 };
 
-}}
+}}}
 
 #endif

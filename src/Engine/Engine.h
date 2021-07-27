@@ -6,8 +6,8 @@
 #include "Engine/struct/Glyph.h"
 #include "Engine/struct/TextSprite.h"
 
-namespace Engine
-{
+namespace MGE { namespace Engine {
+
     // GameMain.cpp
     void InitializeGame(RootMemory* main_memory);
     void GameMain(ScreenBuffer* ScreenBuffer, ControlInput* ControlInput, DebugInfo* DebugInfo);
@@ -22,6 +22,6 @@ namespace Engine
     // AssetManager.cpp
     void LoadAsset(int id);
     Bitmap* GetAsset(int id);
-}
+} }
 
 #endif

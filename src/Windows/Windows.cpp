@@ -9,7 +9,7 @@
  * and as-you-would-expect. It is my own re-creation of the first 25
  * installments of the "Handemade Hero" tutorials.
 */
-namespace WindowsOS
+namespace MGE { namespace Windows
 {
     static BITMAPINFO BitmapInfo;
     static bool running;
@@ -515,7 +515,7 @@ namespace WindowsOS
         
         return 0;
     }
-}
+}}
 
 int CALLBACK WinMain(
     HINSTANCE hInstance,
@@ -523,5 +523,5 @@ int CALLBACK WinMain(
     LPSTR lpCmdLine,
     int nCmdShow)
 {
-    return WindowsOS::WinMain(hInstance);
+    return MGE::Windows::WinMain(hInstance);
 }

@@ -3,9 +3,7 @@
 
 #include "Struct.h"
 
-namespace WindowsOS {
-namespace Rendering
+namespace MGE { namespace Windows { namespace Rendering
 {
         
-}
-}
+}}}

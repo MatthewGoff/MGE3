@@ -1,7 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
 
-namespace WindowsOS
+namespace MGE { namespace Windows
 {
     int StringLength(char* string)
     {
@@ -53,4 +53,4 @@ namespace WindowsOS
     {
         Log(lvl, (float)var);
     }
-}
+}}

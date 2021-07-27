@@ -1,5 +1,7 @@
 #include "Engine.h"
 
+namespace MGE {
+
 int animation_offset;
 Sprite smile_sprite;
 Sprite ascii_sprite;
@@ -64,4 +66,6 @@ void Engine::GameMain(ScreenBuffer* ScreenBuffer, ControlInput* ControlInput, De
     Engine::Paste((Bitmap*)ScreenBuffer, &smile_sprite);
     Engine::Paste((Bitmap*)ScreenBuffer, &ascii_sprite);
     Engine::PasteText((Bitmap*)ScreenBuffer, &my_text);
+}
+
 }

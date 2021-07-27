@@ -1,9 +1,7 @@
 #include "..\Struct.h"
 #include "..\VulkanEnvironment.h"
 
-namespace WindowsOS {
-namespace Rendering {
-namespace Init
+namespace MGE { namespace Windows { namespace Rendering { namespace Init
 {    
     bool CreateImageViews(VulkanEnvironment* env)
     {
@@ -151,4 +149,4 @@ namespace Init
     }
 
 }
-} }
+}}}

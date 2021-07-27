@@ -1,8 +1,7 @@
 #include <vulkan.h>
 #include "..\Struct.h"
 
-namespace WindowsOS { namespace Rendering {
-namespace Init
+namespace MGE { namespace Windows { namespace Rendering { namespace Init
 {
     bool SetupDebugMessenger(
         VkInstance vk_instance,
@@ -130,4 +129,4 @@ namespace Init
         return true;
     }
 }
-} }
+}}}

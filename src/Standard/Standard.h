@@ -1,6 +1,8 @@
 #ifndef STANDARD_H
 #define STANDARD_H
 
+namespace MGE {
+
 namespace Vector
 {
     struct float2
@@ -47,6 +49,8 @@ namespace String
     char* ToString(float val);
     int Compare(char* s1, char* s2);
     char* Format(char* msg, ...);
+}
+
 }
 
 #endif

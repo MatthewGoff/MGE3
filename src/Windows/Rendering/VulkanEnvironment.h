@@ -4,9 +4,7 @@
 #include "Struct.h"
 #include "Device.h"
 
-namespace WindowsOS {
-namespace Rendering
-{
+namespace MGE { namespace Windows { namespace Rendering {
     
 struct VulkanEnvironment
 {
@@ -42,6 +40,7 @@ struct VulkanEnvironment
     VkFramebuffer Framebuffers[SwapchainConfig::MAX_SIZE];
     VkCommandBuffer CommandBuffers[SwapchainConfig::MAX_SIZE];
 };
-}}
+
+}}}
 
 #endif

@@ -1,7 +1,7 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan.h>
 
-//#include "..\WindowsOS.h" // included by vulkan with win32 definition
+//#include "..\Windows.h" // included by vulkan with win32 definition
 #include "Init\Init.h"
 #include "Struct.h"
 #include "VulkanEnvironment.h"
@@ -9,8 +9,7 @@
 // todo: remove these src/Engine/ imports. Used for opening bitmap and bitmap struct
 #include "Engine\Engine.h"
 
-namespace WindowsOS {
-namespace Rendering
+namespace MGE { namespace Windows { namespace Rendering
 {
     VulkanEnvironment Environment;
 
@@ -711,5 +710,4 @@ namespace Rendering
 
         return true;
     }
-}
-}
+}}}

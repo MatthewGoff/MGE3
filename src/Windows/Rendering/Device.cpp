@@ -3,8 +3,7 @@
 
 #include "Device.h"
 
-namespace WindowsOS {
-namespace Rendering {
+namespace MGE { namespace Windows { namespace Rendering {
 
 bool Device::CreateDevice(
     VulkanConfig* config,
@@ -288,5 +287,4 @@ bool Device::CreateImage(
     return true;
 }
 
-}
-}
+}}}

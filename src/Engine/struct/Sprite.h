@@ -3,6 +3,8 @@
 
 #include "Bitmap.h"
 
+namespace MGE {
+
 struct Sprite
 {
     Vector::float2 Position;
@@ -11,5 +13,7 @@ struct Sprite
     float Scale;
     Bitmap* Bitmap;
 };
+
+}
 
 #endif

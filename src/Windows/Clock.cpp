@@ -1,10 +1,9 @@
 #include <windows.h>
-//#include "WindowsOS.h"
+//#include "Windows.h"
 
 double Frequency; // ticks per micro second (usually 1.0)
 
-namespace WindowsOS {
-namespace Clock
+namespace MGE { namespace Windows { namespace Clock
 {
     void Initialize()
     {
@@ -25,5 +24,4 @@ namespace Clock
     {
         return (int32)(GetTimeMicro() / 1000);
     }
-}
-}
+}}}

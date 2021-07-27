@@ -2,8 +2,7 @@
 #include "..\VulkanEnvironment.h"
 #include PLATFORM_HEADER
 
-namespace WindowsOS { namespace Rendering {
-namespace Init
+namespace MGE { namespace Windows { namespace Rendering { namespace Init
 {    
     bool CreateRenderPass(
         VkDevice logical_device,
@@ -296,4 +295,4 @@ namespace Init
         return true;
     }
 }
-} }
+}}}

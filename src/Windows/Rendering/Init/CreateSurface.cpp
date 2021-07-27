@@ -1,8 +1,7 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan.h>
 
-namespace WindowsOS { namespace Rendering {
-namespace Init
+namespace MGE { namespace Windows { namespace Rendering { namespace Init
 {
     bool CreateSurface(
         VkInstance vk_instance,
@@ -32,4 +31,4 @@ namespace Init
         return true;
     }
 }
-} }
+}}}

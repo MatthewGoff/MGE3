@@ -1,6 +1,8 @@
 #include "Engine.h"
 #include PLATFORM_HEADER
 
+namespace MGE {
+
 /*
 Takes the location of a (.bmp) file loaded into memory and creates a re-formatted copy at the output location.
 
@@ -83,4 +85,6 @@ bool Engine::OpenBitmap(byte* mem, int mem_size, Bitmap* destination, int dest_s
     bool success = DecodeBitmap(mem, 10 * MEGABYTES, destination, 10 * MEGABYTES);
 
     return success;
+}
+
 }

@@ -1,8 +1,7 @@
 #include "..\Struct.h"
 #include "..\VulkanEnvironment.h"
 
-namespace WindowsOS { namespace Rendering {
-namespace Init
+namespace MGE { namespace Windows { namespace Rendering { namespace Init
 {        
     bool CreateFramebuffers(VulkanEnvironment* env)
     {
@@ -118,4 +117,4 @@ namespace Init
         return true;
     }
 }
-} }
+}}}

@@ -1,5 +1,5 @@
 
-namespace Vector
+namespace MGE { namespace Vector
 {
     float2 Add(float2 oprnd1, float2 oprnd2)
     {
@@ -25,4 +25,4 @@ namespace Vector
     {
         return float2 {vector.x / scalar, vector.y / scalar};
     }
-}
+}}
