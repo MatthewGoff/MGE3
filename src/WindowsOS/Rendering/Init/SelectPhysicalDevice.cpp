@@ -4,14 +4,14 @@ namespace WindowsOS { namespace Rendering {
 namespace Init
 {
     QueueFamilyConfig FindQueueFamilyConfig(
-        VkPhysicalDevice physical_device_handle, 
-        VkSurfaceKHR surface_handle)
+        VkPhysicalDevice physical_device, 
+        VkSurfaceKHR surface)
     {
         QueueFamilyConfig queue_family_config = {};
         
         uint32 count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(
-            physical_device_handle,
+            physical_device,
             &count,
             nullptr);
         
@@ -26,7 +26,7 @@ namespace Init
         }
         VkQueueFamilyProperties family_properties[10];
         vkGetPhysicalDeviceQueueFamilyProperties(
-            physical_device_handle,
+            physical_device,
             &count,
             family_properties);
         
@@ -40,9 +40,9 @@ namespace Init
             }
             VkBool32 present_support;
             vkGetPhysicalDeviceSurfaceSupportKHR(
-                physical_device_handle,
+                physical_device,
                 i,
-                surface_handle,
+                surface,
                 &present_support);
             if (present_support)
             {
@@ -88,20 +88,20 @@ namespace Init
     Return false if failed to complete or if swapchain support is inssuficient.
     */
     bool DetermineSwapchainSupport(
-        VkPhysicalDevice physical_device_handle, // in
-        VkSurfaceKHR surface_handle, // in
+        VkPhysicalDevice physical_device, // in
+        VkSurfaceKHR surface, // in
         SwapchainConfig* swapchain_config) // out
     {
         *swapchain_config = {};
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
-            physical_device_handle,
-            surface_handle,
+            physical_device,
+            surface,
             &swapchain_config->Capabilities);
 
         uint32 count;
         vkGetPhysicalDeviceSurfaceFormatsKHR(
-            physical_device_handle,
-            surface_handle,
+            physical_device,
+            surface,
             &count,
             nullptr);
         
@@ -112,8 +112,8 @@ namespace Init
         
         VkSurfaceFormatKHR available_formats[20];
         vkGetPhysicalDeviceSurfaceFormatsKHR(
-            physical_device_handle,
-            surface_handle,
+            physical_device,
+            surface,
             &count,
             available_formats);
         
@@ -121,8 +121,8 @@ namespace Init
 
         count = 0;
         vkGetPhysicalDeviceSurfacePresentModesKHR(
-            physical_device_handle,
-            surface_handle,
+            physical_device,
+            surface,
             &count,
             nullptr);
         
@@ -133,8 +133,8 @@ namespace Init
 
         VkPresentModeKHR available_modes[20];
         vkGetPhysicalDeviceSurfacePresentModesKHR(
-            physical_device_handle,
-            surface_handle,
+            physical_device,
+            surface,
             &count,
             available_modes);
                     
@@ -143,11 +143,11 @@ namespace Init
         return true;
     }
     
-    bool DeviceSupportsExtensions(VulkanConfig* config, VkPhysicalDevice physical_device_handle)
+    bool DeviceSupportsExtensions(VulkanConfig* config, VkPhysicalDevice physical_device)
     {
         uint32 count;
         vkEnumerateDeviceExtensionProperties(
-            physical_device_handle,
+            physical_device,
             nullptr,
             &count,
             nullptr);
@@ -164,7 +164,7 @@ namespace Init
         
         VkExtensionProperties available_extensions[200];
         vkEnumerateDeviceExtensionProperties(
-            physical_device_handle,
+            physical_device,
             nullptr,
             &count,
             available_extensions);
@@ -197,13 +197,13 @@ namespace Init
 
     bool SuitableDevice(
         VulkanConfig* config,
-        VkPhysicalDevice physical_device_handle,
-        VkSurfaceKHR surface_handle,
+        VkPhysicalDevice physical_device,
+        VkSurfaceKHR surface,
         QueueFamilyConfig* queue_family_config,
         SwapchainConfig* swapchain_config)
     {
         /*
-        uint64 size = Com::MemoryAvailable(physical_device_handle);
+        uint64 size = Com::MemoryAvailable(physical_device);
         uint64 requirement = config->PhysicalMemReq;
         if ((unsigned) size < (unsigned) 2 * requirement)
         {
@@ -212,31 +212,31 @@ namespace Init
         */
 
         VkPhysicalDeviceProperties properties;
-        vkGetPhysicalDeviceProperties(physical_device_handle, &properties);
+        vkGetPhysicalDeviceProperties(physical_device, &properties);
 
         VkPhysicalDeviceFeatures features;
-        vkGetPhysicalDeviceFeatures(physical_device_handle, &features);
+        vkGetPhysicalDeviceFeatures(physical_device, &features);
         
         if (!features.samplerAnisotropy)
         {
             return false;
         }
 
-        *queue_family_config = FindQueueFamilyConfig(physical_device_handle, surface_handle);
+        *queue_family_config = FindQueueFamilyConfig(physical_device, surface);
         if (!queue_family_config->GraphicsAvailable || !queue_family_config->PresentAvailable)
         {
             return false;
         }
         
-        bool extension_support = DeviceSupportsExtensions(config, physical_device_handle);
+        bool extension_support = DeviceSupportsExtensions(config, physical_device);
         if (!extension_support)
         {
             return false;
         }
 
         bool swap_chain_support = DetermineSwapchainSupport(
-            physical_device_handle,
-            surface_handle,
+            physical_device,
+            surface,
             swapchain_config);
         if (!swap_chain_support)
         {
@@ -248,14 +248,14 @@ namespace Init
     
     bool SelectPhysicalDevice(
         VulkanConfig* config,
-        VkInstance vulkan_handle,
-        VkSurfaceKHR surface_handle,
+        VkInstance vk_instance,
+        VkSurfaceKHR surface,
         QueueFamilyConfig* queue_family_config,
         SwapchainConfig* swapchain_config, //out
-        VkPhysicalDevice* physical_device_handle)
+        VkPhysicalDevice* physical_device)
     {
         uint32 count = 0;
-        vkEnumeratePhysicalDevices(vulkan_handle, &count, nullptr);
+        vkEnumeratePhysicalDevices(vk_instance, &count, nullptr);
         
         if (count == 0)
         {
@@ -267,7 +267,7 @@ namespace Init
         }
         
         VkPhysicalDevice available_devices[10];
-        vkEnumeratePhysicalDevices(vulkan_handle, &count, available_devices);
+        vkEnumeratePhysicalDevices(vk_instance, &count, available_devices);
         
         for (int i = 0; i < count; i++)
         {
@@ -275,12 +275,12 @@ namespace Init
             bool suitable = SuitableDevice(
                 config,
                 available_devices[i],
-                surface_handle,
+                surface,
                 queue_family_config,
                 swapchain_config);
             if (suitable)
             {
-                *physical_device_handle = available_devices[i];
+                *physical_device = available_devices[i];
                 return true;
             }
         }

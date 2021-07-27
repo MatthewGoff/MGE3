@@ -10,21 +10,21 @@ namespace Init
     bool CreateInstance(
         VulkanConfig* config,
         VkDebugUtilsMessengerCreateInfoEXT* debug_info,
-        VkInstance* vulkan_handle);
+        VkInstance* vk_instance);
 
     bool CreateSurface(
-        VkInstance vulkan_handle,
-        HINSTANCE instance_handle,
-        HWND window_handle,
-        VkSurfaceKHR* surface_handle);
+        VkInstance vk_instance,
+        HINSTANCE windows_instance,
+        HWND window,
+        VkSurfaceKHR* surface);
 
     bool SelectPhysicalDevice(
         VulkanConfig* config,
-        VkInstance vulkan_handle,
-        VkSurfaceKHR surface_handle,
+        VkInstance vk_instance,
+        VkSurfaceKHR surface,
         QueueFamilyConfig* queue_family_config,
         SwapchainConfig* swapchain_config,
-        VkPhysicalDevice* physical_device_handle);
+        VkPhysicalDevice* physical_device);
         
     bool CreateSwapchain(VulkanEnvironment* env);
         
@@ -35,8 +35,8 @@ namespace Init
     bool CreateCommandBuffers(VulkanEnvironment* env, VkBuffer vertex_buffer);
 
     bool CreateVKSemaphore(
-        VkDevice logical_device_handle,
-        VkSemaphore* semaphore_handle);
+        VkDevice logical_device,
+        VkSemaphore* semaphore);
 
 }
 } }
