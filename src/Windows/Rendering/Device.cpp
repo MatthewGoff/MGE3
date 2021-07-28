@@ -5,7 +5,7 @@
 
 namespace MGE { namespace Windows { namespace Rendering {
 
-bool Device::CreateDevice(
+bool Device::Init(
     VulkanConfig* config,
     VkPhysicalDevice physical_device,
     QueueFamilyConfig* queue_family_config,    
@@ -174,8 +174,6 @@ bool Device::InitializeBuffers()
     StagingBuffer.Properties =
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
         | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-    Texture.Size = 64 * KILOBYTES;
             
     bool success;
     success = CreateBuffer(&VertexBuffer);
@@ -187,6 +185,12 @@ bool Device::InitializeBuffers()
     success = CreateBuffer(&StagingBuffer);
     if (!success) {return false;}
     
+    TextureMemory = {};
+    TextureMemory.Size = 10 * 64 * KILOBYTES;
+    TextureMemory.StackPointer = 0;
+    success = CreateImageAllocation(TextureMemory.Size, &TextureMemory.VkHandle);
+    if (!success) {return false;}
+
     return true;
 }
 
@@ -242,7 +246,10 @@ bool Device::CreateImageAllocation(uint64 size, VkDeviceMemory* allocation)
     return true;
 }
 
-bool Device::BindImage(uint32 width, uint32 height, VkImage* image, VkDeviceMemory* image_memory)
+/*
+Returns false if there is insufficient memory
+*/
+bool Device::CreateImage(uint32 width, uint32 height, VkImage* image, uint64* memory_offset)
 {
     VkImageCreateInfo image_info = {};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -263,27 +270,17 @@ bool Device::BindImage(uint32 width, uint32 height, VkImage* image, VkDeviceMemo
     VkResult result = vkCreateImage(LogicalDevice, &image_info, nullptr, image);
     if (result != VK_SUCCESS) {return false;}
     
-    result = vkBindImageMemory(LogicalDevice, *image, *image_memory, 0);
+    VkMemoryRequirements mem_req;
+    vkGetImageMemoryRequirements(LogicalDevice, *image, &mem_req);
+    uint64 mem_usage = mem_req.size;
+    if (mem_usage > TextureMemory.MemoryAvailable()) {return false;}
+    
+    result = vkBindImageMemory(LogicalDevice, *image, TextureMemory.VkHandle, 0);
     if (result != VK_SUCCESS) {return false;}
     
-    return true;
-}
+    *memory_offset = TextureMemory.StackPointer;
+    TextureMemory.StackPointer += mem_usage;
 
-bool Device::CreateImage(
-    uint32 width,
-    uint32 height,
-    uint64 size,
-    VkImage* image,
-    VkDeviceMemory* image_memory)
-{
-    bool success;
-    
-    success = CreateImageAllocation(size, image_memory);
-    if (!success) {return false;}
-    
-    success = BindImage(width, height, image, image_memory);
-    if (!success) {return false;}
-    
     return true;
 }
 

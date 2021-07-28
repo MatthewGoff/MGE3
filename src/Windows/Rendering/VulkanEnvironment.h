@@ -2,6 +2,7 @@
 
 #include "Struct.h"
 #include "Device.h"
+#include "Texture.h"
 
 namespace MGE { namespace Windows { namespace Rendering {
     
@@ -30,8 +31,7 @@ struct VulkanEnvironment
     VkDescriptorSet DescriptorSet;
     VkDescriptorPool DescriptorPool;
     
-    VkImageView TextureView;
-    VkSampler TextureSampler;
+    Texture MyTexture;
    
     // Objects with one instance per swapchain image
     VkImage Images[SwapchainConfig::MAX_SIZE];

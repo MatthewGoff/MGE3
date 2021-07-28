@@ -114,14 +114,17 @@ struct Buffer
     VkMemoryPropertyFlags Properties;
 };
 
-struct Image
+struct DeviceAllocation
 {
-    VkImage Handle;
+    VkDeviceMemory VkHandle;
+    uint64 StackPointer;
     uint64 Size;
-    VkDeviceMemory Memory;
-    uint64 Offset;
-    VkImageUsageFlags Usage;
-    VkMemoryPropertyFlags Properties;
+    
+    uint64 MemoryAvailable()
+    {
+        if (Size < StackPointer) {return 0;}
+        return Size-StackPointer;
+    }
 };
 
 }}}

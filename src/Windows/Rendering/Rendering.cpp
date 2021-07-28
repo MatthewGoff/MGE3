@@ -5,6 +5,7 @@
 #include "Init\Init.h"
 #include "Struct.h"
 #include "VulkanEnvironment.h"
+#include "Texture.h"
 
 // todo: remove these src/Engine/ imports. Used for opening bitmap and bitmap struct
 #include "Engine\Engine.h"
@@ -126,7 +127,6 @@ bool CreateDescriptorSetLayout(VulkanEnvironment* env)
 
 bool CreateDescriptorPool(VulkanEnvironment* env)
 {
-    
     VkDescriptorPoolSize pool_sizes[2];
     pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     pool_sizes[0].descriptorCount = (uint32)Environment.SwapchainConfig.Size;
@@ -154,9 +154,7 @@ bool CreateDescriptorPool(VulkanEnvironment* env)
     return true;
 }
 
-bool CreateCommandPool(
-    VulkanEnvironment* env,
-    QueueFamilyConfig* queue_family_config)
+bool CreateCommandPool(VulkanEnvironment* env, QueueFamilyConfig* queue_family_config)
 {
     VkCommandPoolCreateInfo pool_info = {};
     pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -199,8 +197,8 @@ bool CreateDescriptorSet(VulkanEnvironment* env)
     
     VkDescriptorImageInfo image_info = {};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_info.imageView = env->TextureView;
-    image_info.sampler = env->TextureSampler;
+    image_info.imageView = env->MyTexture.TextureView;
+    image_info.sampler = env->MyTexture.TextureSampler;
 
     VkWriteDescriptorSet descriptor_writes[2];
     
@@ -266,70 +264,6 @@ void EndSingleTimeCommands(VkCommandBuffer command_buffer)
         &command_buffer);
 }
 
-// Change the layout of an image in gpu memory
-void TransitionImageLayout(
-    VkImage image,
-    VkFormat format,
-    VkImageLayout oldLayout,
-    VkImageLayout newLayout)
-{
-    VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
-    
-    VkImageMemoryBarrier barrier = {};
-    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    barrier.oldLayout = oldLayout;
-    barrier.newLayout = newLayout;
-    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.image = image;
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    barrier.subresourceRange.baseMipLevel = 0;
-    barrier.subresourceRange.levelCount = 1;
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
-
-    VkPipelineStageFlags sourceStage;
-    VkPipelineStageFlags destinationStage;
-
-    if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED
-        && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-    {
-        barrier.srcAccessMask = 0;
-        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-    }
-    else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-        && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-    {
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-        sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    }
-    else
-    {
-        Error("[Error] Failed to change image format on graphics device.\n");
-        return;
-    }
-
-    vkCmdPipelineBarrier(
-    commandBuffer,
-    sourceStage,
-    destinationStage,
-    0,
-    0,
-    nullptr,
-    0,
-    nullptr,
-    1,
-    &barrier);
-
-    EndSingleTimeCommands(commandBuffer);
-}
-
 // Used in tutorial to move data from staging buffers to device optimal buffers.
 void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 {
@@ -342,130 +276,13 @@ void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
     EndSingleTimeCommands(commandBuffer);
 }
 
-void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32 width, uint32 height) {
-    VkCommandBuffer commandBuffer = BeginSingleTimeCommands();
-
-    VkBufferImageCopy region = {};
-    region.bufferOffset = 0;
-    region.bufferRowLength = 0;
-    region.bufferImageHeight = 0;
-    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.imageSubresource.mipLevel = 0;
-    region.imageSubresource.baseArrayLayer = 0;
-    region.imageSubresource.layerCount = 1;
-    region.imageOffset = {0, 0, 0};
-    region.imageExtent = {width, height, 1};
-
-    vkCmdCopyBufferToImage(
-        commandBuffer,
-        buffer,
-        image,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        1,
-        &region);
-
-    EndSingleTimeCommands(commandBuffer);
-}
-
-bool CreateImage(VulkanEnvironment* env, Bitmap* bitmap)
-{
-    bool success;
-    VkResult result;
-    success = env->Device.CreateImage(
-        bitmap->Width,
-        bitmap->Height,
-        Environment.Device.Texture.Size,
-        &Environment.Device.Texture.Handle,
-        &Environment.Device.Texture.Memory);
-
-    // Part 2: Move memory to device
-    
-    VkMemoryRequirements mem_req;
-    vkGetImageMemoryRequirements(env->Device.LogicalDevice, Environment.Device.Texture.Handle, &mem_req);    
-
-    void* data;
-    vkMapMemory(env->Device.LogicalDevice, Environment.Device.StagingBuffer.Memory, 0, mem_req.size, 0, &data);
-    memcpy(data, bitmap->Pixels, (uint32)mem_req.size);
-    vkUnmapMemory(env->Device.LogicalDevice, Environment.Device.StagingBuffer.Memory);
-
-    TransitionImageLayout(
-        Environment.Device.Texture.Handle,
-        VK_FORMAT_R8G8B8A8_SRGB,
-        VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    CopyBufferToImage(
-        Environment.Device.StagingBuffer.Handle,
-        Environment.Device.Texture.Handle,
-        (uint32)bitmap->Width,
-        (uint32)bitmap->Height);
-    TransitionImageLayout(
-        Environment.Device.Texture.Handle,
-        VK_FORMAT_R8G8B8A8_SRGB,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    
-    // End part 2
-    
-    VkImageViewCreateInfo view_info = {};
-    view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    view_info.image = Environment.Device.Texture.Handle;
-    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    view_info.format = VK_FORMAT_R8G8B8A8_SRGB;
-    view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    view_info.subresourceRange.baseMipLevel = 0;
-    view_info.subresourceRange.levelCount = 1;
-    view_info.subresourceRange.baseArrayLayer = 0;
-    view_info.subresourceRange.layerCount = 1;
-
-    result = vkCreateImageView(
-        env->Device.LogicalDevice,
-        &view_info,
-        nullptr,
-        &env->TextureView);
-    if (result != VK_SUCCESS)
-    {
-        return false;
-        // for reference: "failed to create texture image view"
-    }
-    
-    VkSamplerCreateInfo sampler_info = {};
-    sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    sampler_info.magFilter = VK_FILTER_LINEAR;
-    sampler_info.minFilter = VK_FILTER_LINEAR;
-    sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler_info.anisotropyEnable = VK_TRUE;
-    sampler_info.maxAnisotropy = env->Device.PhysicalProperties.limits.maxSamplerAnisotropy;
-    sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-    sampler_info.unnormalizedCoordinates = VK_FALSE;
-    sampler_info.compareEnable = VK_FALSE;
-    sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
-    sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    sampler_info.mipLodBias = 0.0f;
-    sampler_info.minLod = 0.0f;
-    sampler_info.maxLod = 0.0f;
-
-    result = vkCreateSampler(
-        env->Device.LogicalDevice,
-        &sampler_info,
-        nullptr,
-        &env->TextureSampler);
-    if (result != VK_SUCCESS)
-    {
-        return false;
-        // for reference: "failed to create texture sampler"
-    }
-
-    return true;
-}
-
 bool FunImage(VulkanEnvironment* env)
 {
     Engine::LoadAsset(1);
     Bitmap* bitmap = Engine::GetAsset(1);
     
-    bool success = CreateImage(env, bitmap);
+    bool success = env->MyTexture.Init(&env->Device, bitmap);
+
     if (!success)
     {
         return false;
@@ -517,7 +334,7 @@ bool InitVulkan(HINSTANCE instance_handle, HWND window_handle)
         return false;
     }
 
-    success = Environment.Device.CreateDevice(
+    success = Environment.Device.Init(
         &config,
         physical_device,
         &Environment.QueueFamilyConfig,    
@@ -632,9 +449,7 @@ void UpdateUniformBuffer()
         0,
         &data);
     memcpy(data, &ubo, sizeof(ubo));
-    vkUnmapMemory(
-        Environment.Device.LogicalDevice,
-        Environment.Device.UniformBuffer.Memory);
+    vkUnmapMemory(Environment.Device.LogicalDevice, Environment.Device.UniformBuffer.Memory);
 
 }
 
@@ -654,16 +469,16 @@ bool DrawFrame()
     
     if (result == VK_ERROR_OUT_OF_DATE_KHR)
     {
-        Error("[Error] Swap chain out of date");
+        Error("[Error] Swap chain out of date.\n");
         return false;
     }
     else if (result == VK_SUBOPTIMAL_KHR)
     {
-        Warning("[Warning] Swap chain suboptimal");
+        Warning("[Warning] Swap chain suboptimal.\n");
     }
     else if (result != VK_SUCCESS)
     {
-        Error("[Error] Failed to acquire image buffer at top of draw frame");
+        Error("[Error] Failed to acquire image buffer at top of draw frame.\n");
         return false;
     }
 
