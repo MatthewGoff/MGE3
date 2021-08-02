@@ -31,7 +31,8 @@ struct VulkanEnvironment
     VkDescriptorSet DescriptorSet;
     VkDescriptorPool DescriptorPool;
     
-    Texture MyTexture;
+    static const int TEXTURE_COUNT = 10;
+    Texture MyTextures[TEXTURE_COUNT];
    
     // Objects with one instance per swapchain image
     VkImage Images[SwapchainConfig::MAX_SIZE];

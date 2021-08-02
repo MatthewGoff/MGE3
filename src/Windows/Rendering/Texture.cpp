@@ -101,6 +101,9 @@ bool Texture::Init(Device* device, Bitmap* bitmap)
 {
     bool success;
     VkResult result;
+    
+    *this = {};
+    
     success = device->CreateImage(bitmap->Width, bitmap->Height, &Image, &MemoryOffset);
 
     // Part 2: Move memory to device

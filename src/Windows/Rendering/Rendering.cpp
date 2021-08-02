@@ -100,7 +100,7 @@ bool CreateDescriptorSetLayout(VulkanEnvironment* env)
 
     VkDescriptorSetLayoutBinding sampler_layout_binding = {};
     sampler_layout_binding.binding = 1;
-    sampler_layout_binding.descriptorCount = 1;
+    sampler_layout_binding.descriptorCount = env->TEXTURE_COUNT;
     sampler_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     sampler_layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     sampler_layout_binding.pImmutableSamplers = nullptr; // Optional
@@ -129,15 +129,15 @@ bool CreateDescriptorPool(VulkanEnvironment* env)
 {
     VkDescriptorPoolSize pool_sizes[2];
     pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    pool_sizes[0].descriptorCount = (uint32)Environment.SwapchainConfig.Size;
+    pool_sizes[0].descriptorCount = 1;
     pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    pool_sizes[1].descriptorCount = (uint32)Environment.SwapchainConfig.Size;
+    pool_sizes[1].descriptorCount = env->TEXTURE_COUNT;
 
     VkDescriptorPoolCreateInfo pool_info = {};
     pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     pool_info.poolSizeCount = 2;
     pool_info.pPoolSizes = pool_sizes;
-    pool_info.maxSets = (uint32)Environment.SwapchainConfig.Size;
+    pool_info.maxSets = 1;
 
     VkResult result = vkCreateDescriptorPool(
         env->Device.LogicalDevice,
@@ -195,10 +195,21 @@ bool CreateDescriptorSet(VulkanEnvironment* env)
     buffer_info.offset = 0;
     buffer_info.range = sizeof(UniformBufferObject);
     
+    /*
     VkDescriptorImageInfo image_info = {};
     image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    image_info.imageView = env->MyTexture.TextureView;
-    image_info.sampler = env->MyTexture.TextureSampler;
+    image_info.imageView = env->MyTextureOne.TextureView;
+    image_info.sampler = env->MyTextureOne.TextureSampler;
+    */
+    
+    VkDescriptorImageInfo image_info[env->TEXTURE_COUNT];
+    for (int i = 0; i < env->TEXTURE_COUNT; i++)
+    {
+        image_info[i] = {};
+        image_info[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        image_info[i].imageView = env->MyTextures[i].TextureView;
+        image_info[i].sampler = env->MyTextures[i].TextureSampler;
+    }
 
     VkWriteDescriptorSet descriptor_writes[2];
     
@@ -217,9 +228,9 @@ bool CreateDescriptorSet(VulkanEnvironment* env)
     descriptor_writes[1].dstBinding = 1;
     descriptor_writes[1].dstArrayElement = 0;
     descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptor_writes[1].descriptorCount = 1;
-    descriptor_writes[1].pImageInfo = &image_info;
-    
+    descriptor_writes[1].descriptorCount = env->TEXTURE_COUNT;
+    descriptor_writes[1].pImageInfo = image_info;
+
     vkUpdateDescriptorSets(env->Device.LogicalDevice, 2, descriptor_writes, 0, nullptr);
 
     return true;
@@ -278,14 +289,15 @@ void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 
 bool FunImage(VulkanEnvironment* env)
 {
-    Engine::LoadAsset(1);
-    Bitmap* bitmap = Engine::GetAsset(1);
+    bool success;
     
-    bool success = env->MyTexture.Init(&env->Device, bitmap);
-
-    if (!success)
+    Engine::LoadAsset(2);
+    Bitmap* bitmap = Engine::GetAsset(2);
+    
+    for (int i = 0; i < env->TEXTURE_COUNT; i++)
     {
-        return false;
+        success = env->MyTextures[i].Init(&env->Device, bitmap);
+        if (!success) {return false;}
     }
     
     return true;

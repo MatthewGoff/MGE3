@@ -86,8 +86,8 @@ struct SwapchainConfig
     int Size;
 };
 
-struct VulkanConfig
-{
+const struct VulkanConfig
+{    
     const uint64 PhysicalMemReq = 32 * MEGABYTES;
     
     const int ValidationLayersCount = 1;
