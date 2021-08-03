@@ -50,10 +50,7 @@ bool CreateCommandBuffers(VulkanEnvironment* env, VkBuffer vertex_buffer)
         env->Device.LogicalDevice,
         &alloc_info,
         env->CommandBuffers);
-    if (result != VK_SUCCESS)
-    {
-        return false;
-    }
+    if (result != VK_SUCCESS) {return false;}
     
     for (int i = 0; i < env->SwapchainConfig.Size; i++)
     {
@@ -64,9 +61,7 @@ bool CreateCommandBuffers(VulkanEnvironment* env, VkBuffer vertex_buffer)
         
         //VkResult result;
         result = vkBeginCommandBuffer(env->CommandBuffers[i], &begin_info);
-        if (result != VK_SUCCESS) {
-            return false;
-        }
+        if (result != VK_SUCCESS) {return false;}
         
         VkRenderPassBeginInfo render_pass_info = {};
         render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;

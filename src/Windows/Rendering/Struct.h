@@ -15,6 +15,7 @@ struct Vertex
     Vector::float2 Position;
     Vector::float3 Color;
     Vector::float2 TexCoord;
+    uint32 TexIndex;
     
     static VkVertexInputBindingDescription BindingDescription()
     {
@@ -52,7 +53,7 @@ struct Vertex
         return description;
     }
     
-    static VkVertexInputAttributeDescription TextureDescription()
+    static VkVertexInputAttributeDescription TexCoordDescription()
     {
         VkVertexInputAttributeDescription description = {};
 
@@ -62,6 +63,19 @@ struct Vertex
         description.offset = offsetof(Vertex, TexCoord);
         
         return description;
+    }
+    
+    static VkVertexInputAttributeDescription TexIndexDescription()
+    {
+        VkVertexInputAttributeDescription description = {};
+
+        description.binding = 0; //
+        description.location = 3; //
+        description.format = VK_FORMAT_R8_UINT;
+        description.offset = offsetof(Vertex, TexIndex);
+        
+        return description;
+
     }
 
 };
