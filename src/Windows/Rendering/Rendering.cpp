@@ -62,34 +62,6 @@ void GetDebugInfo(VkDebugUtilsMessengerCreateInfoEXT* debug_info)
     debug_info->pfnUserCallback = DebugCallback;
 }
 
-bool CreateVertexBuffer(
-    Device* device,
-    VkBuffer* vertex_buffer,
-    VkDeviceMemory* vertex_buffer_memory)
-{
-    uint image_index = 1;
-    Vertex vertices[] =
-    {
-        {{0.5f, 0.5f}, {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f}, image_index}, // bottom right
-        {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, image_index}, // bottom left
-        {{-0.5f, -0.5f}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, image_index}, // top left
-        
-        {{-0.5f, -0.5f}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, image_index}, // top left
-        {{0.5f, -0.5f}, {0.0f, 1.0f, 1.0f}, {1.0f, 0.0f}, image_index}, // top right
-        {{0.5f, 0.5f}, {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f}, image_index} // bottom right
-    };
-    
-    int vertices_count = 6;
-    int vertices_size = vertices_count * sizeof(vertices[0]);
-    
-    void* data;
-    vkMapMemory(device->LogicalDevice, *vertex_buffer_memory, 0, vertices_size, 0, &data);
-    memcpy(data, vertices, vertices_size);
-    vkUnmapMemory(device->LogicalDevice, *vertex_buffer_memory);
-
-    return true;
-}
-
 bool CreateDescriptorSetLayout(VulkanEnvironment* env)
 {
     VkDescriptorSetLayoutBinding ubo_layout_binding = {};
@@ -406,16 +378,6 @@ bool InitVulkan(HINSTANCE instance_handle, HWND window_handle)
         Error("[Error] Failed to create Image.\n");
         return false;
     }
-    
-    success = CreateVertexBuffer(
-        &Environment.Device,
-        &Environment.Device.VertexBuffer.Handle,
-        &Environment.Device.VertexBuffer.Memory);
-    if (!success)
-    {
-        Error("[Error] Failed to create vertex buffer.\n");
-        return false;
-    }
 
     success = CreateDescriptorPool(&Environment);
     if (!success)
@@ -473,7 +435,37 @@ void UpdateUniformBuffer()
         &data);
     memcpy(data, &ubo, sizeof(ubo));
     vkUnmapMemory(Environment.Device.LogicalDevice, Environment.Device.UniformBuffer.Memory);
+}
 
+bool UpdateVertexBuffer()
+{
+    uint image_index = 1;
+    Vertex vertices[] =
+    {
+        {{0.5f, 0.5f}, {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f}, image_index}, // bottom right
+        {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, image_index}, // bottom left
+        {{-0.5f, -0.5f}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, image_index}, // top left
+        
+        {{-0.5f, -0.5f}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, image_index}, // top left
+        {{0.5f, -0.5f}, {0.0f, 1.0f, 1.0f}, {1.0f, 0.0f}, image_index}, // top right
+        {{0.5f, 0.5f}, {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f}, image_index} // bottom right
+    };
+    
+    int vertices_count = 6;
+    int vertices_size = vertices_count * sizeof(vertices[0]);
+    
+    void* data;
+    vkMapMemory(
+        Environment.Device.LogicalDevice,
+        Environment.Device.VertexBuffer.Memory,
+        0,
+        vertices_size,
+        0,
+        &data);
+    memcpy(data, vertices, vertices_size);
+    vkUnmapMemory(Environment.Device.LogicalDevice, Environment.Device.VertexBuffer.Memory);
+
+    return true;
 }
 
 bool DrawFrame()
@@ -506,6 +498,7 @@ bool DrawFrame()
     }
 
     UpdateUniformBuffer();
+    UpdateVertexBuffer();
 
     VkSubmitInfo submit_info = {};
     submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
