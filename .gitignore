@@ -2,6 +2,7 @@
 
 build/*
 !build/Assets/
+build/Assets/Shaders
 
 */__pycache__/
 
