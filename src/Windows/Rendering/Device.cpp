@@ -186,7 +186,7 @@ bool Device::InitializeBuffers()
     if (!success) {return false;}
     
     TextureMemory = {};
-    TextureMemory.Size = 10 * 64 * KILOBYTES;
+    TextureMemory.Size = 100 * 64 * KILOBYTES;
     TextureMemory.StackPointer = 0;
     success = CreateImageAllocation(TextureMemory.Size, &TextureMemory.VkHandle);
     if (!success) {return false;}
@@ -275,7 +275,11 @@ bool Device::CreateImage(uint32 width, uint32 height, VkImage* image, uint64* me
     uint64 mem_usage = mem_req.size;
     if (mem_usage > TextureMemory.MemoryAvailable()) {return false;}
     
-    result = vkBindImageMemory(LogicalDevice, *image, TextureMemory.VkHandle, 0);
+    result = vkBindImageMemory(
+        LogicalDevice,
+        *image,
+        TextureMemory.VkHandle,
+        TextureMemory.StackPointer);
     if (result != VK_SUCCESS) {return false;}
     
     *memory_offset = TextureMemory.StackPointer;

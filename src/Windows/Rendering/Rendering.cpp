@@ -128,8 +128,10 @@ bool CreateDescriptorSetLayout(VulkanEnvironment* env)
 bool CreateDescriptorPool(VulkanEnvironment* env)
 {
     VkDescriptorPoolSize pool_sizes[2];
+    pool_sizes[0] = {};
     pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     pool_sizes[0].descriptorCount = 1;
+    pool_sizes[1] = {};
     pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
     pool_sizes[1].descriptorCount = env->TEXTURE_COUNT;
 
@@ -291,12 +293,20 @@ bool FunImage(VulkanEnvironment* env)
 {
     bool success;
     
+    Engine::LoadAsset(1);
     Engine::LoadAsset(2);
-    Bitmap* bitmap = Engine::GetAsset(2);
+    Bitmap* bitmap[2];
+    bitmap[0] = Engine::GetAsset(1);
+    bitmap[1] = Engine::GetAsset(2);
     
     for (int i = 0; i < env->TEXTURE_COUNT; i++)
     {
-        success = env->MyTextures[i].Init(&env->Device, bitmap);
+        int bitmap_index = 0;
+        if (i == 9)
+        {
+            bitmap_index = 1;
+        }
+        success = env->MyTextures[i].Init(&env->Device, bitmap[i % 2]);
         if (!success) {return false;}
     }
     
