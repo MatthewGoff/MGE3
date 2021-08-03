@@ -97,7 +97,7 @@ bool CreateCommandBuffers(VulkanEnvironment* env, VkBuffer vertex_buffer)
             0,
             nullptr);
 
-        vkCmdDraw(env->CommandBuffers[i], 6, 1, 0, 0);
+        vkCmdDraw(env->CommandBuffers[i], 6 * 3, 1, 0, 0);
         
         vkCmdEndRenderPass(env->CommandBuffers[i]);
         

@@ -437,22 +437,33 @@ void UpdateUniformBuffer()
     vkUnmapMemory(Environment.Device.LogicalDevice, Environment.Device.UniformBuffer.Memory);
 }
 
-bool UpdateVertexBuffer()
+void GenerateRect(Vertex* pointer, Vector::float2 position, uint image_index)
 {
-    uint image_index = 1;
-    Vertex vertices[] =
-    {
-        {{0.5f, 0.5f}, {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f}, image_index}, // bottom right
-        {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, image_index}, // bottom left
-        {{-0.5f, -0.5f}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, image_index}, // top left
-        
-        {{-0.5f, -0.5f}, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, image_index}, // top left
-        {{0.5f, -0.5f}, {0.0f, 1.0f, 1.0f}, {1.0f, 0.0f}, image_index}, // top right
-        {{0.5f, 0.5f}, {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f}, image_index} // bottom right
-    };
     
-    int vertices_count = 6;
-    int vertices_size = vertices_count * sizeof(vertices[0]);
+    Vector::float2 bottom_right = Vector::Add(position, 0.5f, 0.5f);
+    Vector::float2 bottom_left = Vector::Add(position, -0.5f, 0.5f);
+    Vector::float2 top_left = Vector::Add(position, -0.5f, -0.5f);
+    Vector::float2 top_right = Vector::Add(position, 0.5f, -0.5f);
+    
+    *pointer++ = {bottom_right, {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f}, image_index}; // bottom right
+    *pointer++ = {bottom_left, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, image_index}; // bottom left
+    *pointer++ = {top_left, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, image_index}; // top left
+    
+    *pointer++ = {top_left, {1.0f, 0.0f, 1.0f}, {0.0f, 0.0f}, image_index}; // top left
+    *pointer++ = {top_right, {0.0f, 1.0f, 1.0f}, {1.0f, 0.0f}, image_index}; // top right
+    *pointer++ = {bottom_right, {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f}, image_index}; // bottom right
+}
+
+bool UpdateVertexBuffer()
+{    
+    const int vertices_count = 6 * 3;
+    int vertices_size = vertices_count * sizeof(Vertex);
+    
+    Vertex vertices[vertices_count];
+    
+    GenerateRect(&vertices[0], {5.0f, 0.0f}, 0);
+    GenerateRect(&vertices[6], {-5.0f, 0.0f}, 1);
+    GenerateRect(&vertices[12], {0.0f, 3.0f}, 1);
     
     void* data;
     vkMapMemory(
