@@ -1,6 +1,7 @@
 import os
+import sys
 import config
-
+    
 def obj_path(src_path):
     return src_path.replace("src\\", "build\\obj\\").replace(".cpp", ".obj")
 
@@ -82,9 +83,10 @@ def link_command():
     return command
 
 def create_batch():
-    output = "@echo off"
+    output = "@echo off" + "\n"
 
     output += "" + "\n"
+    #output += "cls" + "\n"
     output += "if not exist build mkdir build" + "\n"
     output += "if not exist build\\AppData mkdir build\\AppData" + "\n"
     output += "if not exist build\obj mkdir build\\obj" + "\n"
@@ -106,7 +108,7 @@ def create_batch():
     return output
 
 def main():
-    file = open("build\\_build.bat", "w")
+    file = open(sys.argv[1], "w")
     file.write(create_batch())
     file.close()
 

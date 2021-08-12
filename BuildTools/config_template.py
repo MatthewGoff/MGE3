@@ -1,9 +1,3 @@
-'''
-config.py contains volatile build configuration and is ignored by git
-
-config_template.py is included in the repo so you can create and rename a copy
-'''
-
 def vulkan_sdk(): return "C:\\VulkanSDK\\1.2.162.1"
 
 def debug(): return True
