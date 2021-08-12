@@ -14,7 +14,21 @@ def source():
     return source
 
 def ignore_warnings():
-    warnings = ""
-    #warnings += " -wd4533" # 4533 initialization of <var> is skipped by <goto>
+    warnings = []
+
+    #warnings += ["4533"] # 4533 initialization of <var> is skipped by <goto>
     
     return warnings
+    
+def global_include():
+    includes = []
+    
+    includes += ["Types.h"]
+    includes += ["Config.h"]
+    includes += ["Macros.h"]
+    includes += ["Standard\\Standard.h"]
+    includes += ["Memory.h"]
+    includes += ["malloc.h"]
+    includes += ["math.h"]
+    
+    return includes

@@ -38,20 +38,14 @@ def compile_command():
         command += " -Zi" # Generates debug info used by Visual Studio
 
     ## Dissable warnings ##
-    command += config.ignore_warnings()
+    command += ''.join(" -wd" + x for x in config.ignore_warnings())
     
     ## Header locations ##
     command += " -I src\\"
     command += " -I {}\\Include\\vulkan".format(config.vulkan_sdk())
 
-    ## Always include ##
-    command += " -FITypes.h"
-    command += " -FIConfig.h"
-    command += " -FIMacros.h"
-    command += " -FIStandard\\Standard.h"
-    command += " -FIMemory.h"
-    command += " -FImalloc.h"
-    command += " -FImath.h"
+    ## Global include ##
+    command += ''.join(" -FI" + x for x in config.global_include())
 
     return command
 
@@ -86,7 +80,7 @@ def create_batch():
     output = "@echo off" + "\n"
 
     output += "" + "\n"
-    #output += "cls" + "\n"
+    output += "cls" + "\n"
     output += "if not exist build mkdir build" + "\n"
     output += "if not exist build\\AppData mkdir build\\AppData" + "\n"
     output += "if not exist build\obj mkdir build\\obj" + "\n"
