@@ -437,13 +437,13 @@ void UpdateUniformBuffer()
     vkUnmapMemory(Environment.Device.LogicalDevice, Environment.Device.UniformBuffer.Memory);
 }
 
-void GenerateRect(Vertex* pointer, Standard::Vector::float2 position, uint image_index)
+void GenerateRect(Vertex* pointer, Standard::Sprite* sprite, uint image_index)
 {
     
-    Standard::Vector::float2 bottom_right = Standard::Vector::Add(position, 0.5f, 0.5f);
-    Standard::Vector::float2 bottom_left = Standard::Vector::Add(position, -0.5f, 0.5f);
-    Standard::Vector::float2 top_left = Standard::Vector::Add(position, -0.5f, -0.5f);
-    Standard::Vector::float2 top_right = Standard::Vector::Add(position, 0.5f, -0.5f);
+    Standard::Vector::float2 bottom_right = sprite->BottomRight();
+    Standard::Vector::float2 bottom_left = sprite->BottomLeft();
+    Standard::Vector::float2 top_left = sprite->TopLeft();
+    Standard::Vector::float2 top_right = sprite->TopRight();
     
     *pointer++ = {bottom_right, {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f}, image_index}; // bottom right
     *pointer++ = {bottom_left, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, image_index}; // bottom left
@@ -461,9 +461,30 @@ bool UpdateVertexBuffer()
     
     Vertex vertices[vertices_count];
     
-    GenerateRect(&vertices[0], {5.0f, 0.0f}, 0);
-    GenerateRect(&vertices[6], {-5.0f, 0.0f}, 1);
-    GenerateRect(&vertices[12], {0.0f, 3.0f}, 1);
+    Standard::Sprite sprite1 = {};
+    Standard::Sprite sprite2 = {};
+    Standard::Sprite sprite3 = {};
+    
+    
+    sprite1.Pivot = {0.5f, 0.5f};
+    sprite2.Pivot = {0.5f, 0.5f};
+    sprite3.Pivot = {0.5f, 0.5f};
+
+    sprite1.Position = {3.0f, 0.0f};
+    sprite2.Position = {0.0f, 0.0f};
+    sprite3.Position = {-3.0f, 0.0f};
+
+    sprite1.Scale = {4.0f, 8.0f};
+    sprite2.Scale = {2.0f, 2.0f};
+    sprite3.Scale = {3.0f, 1.0f};
+
+    sprite1.Rotation = 3.14159f * 0.3f;
+    sprite2.Rotation = 3.14159f * 0.5f;
+    sprite3.Rotation = 3.14159f * 1.0f;
+
+    GenerateRect(&vertices[0], &sprite1, 0);
+    GenerateRect(&vertices[6], &sprite2, 1);
+    GenerateRect(&vertices[12], &sprite3, 1);
     
     void* data;
     vkMapMemory(

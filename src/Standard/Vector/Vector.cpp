@@ -21,9 +21,25 @@ float2 Mul(float2 vector, float scalar)
     return float2 {vector.x * scalar, vector.y * scalar};
 }
 
+float2 Mul(float2 v1, float2 v2)
+{
+    return float2 {v1.x * v2.x, v1.y * v2.y};
+}
+
 float2 Div(float2 vector, float scalar)
 {
     return float2 {vector.x / scalar, vector.y / scalar};
+}
+
+float2 Rotate(float2 vector, float rad)
+{
+    float cosine = cos(rad);
+    float sine = sin(rad);
+    
+    float2 result;
+    result.x = (vector.x) * cosine - (vector.y * sine);
+    result.y = (vector.x) * sine + (vector.y * cosine);
+    return result;
 }
 
 }}}
