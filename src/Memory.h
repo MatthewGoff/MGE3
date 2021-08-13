@@ -11,7 +11,7 @@ struct ScreenBuffer
 
 struct ControlInput
 {
-    Vector::int2 CursorPosition;
+    Standard::Vector::int2 CursorPosition;
 };
 
 struct FileBuffer
@@ -25,7 +25,7 @@ struct DebugInfo
     int FrameRate;
     float WorkLoad;
     float Time;
-    Vector::int2 CursorPosition;
+    Standard::Vector::int2 CursorPosition;
 };
 
 struct RootMemory

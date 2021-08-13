@@ -176,7 +176,7 @@ bool DeviceSupportsExtensions(VulkanConfig* config, VkPhysicalDevice physical_de
         for (int j = 0; j < count; j++)
         {
             VkExtensionProperties extension = available_extensions[j];
-            int comp = String::Compare(
+            int comp = Standard::String::Compare(
                 desired_extension,
                 extension.extensionName);
             if (comp == 0)

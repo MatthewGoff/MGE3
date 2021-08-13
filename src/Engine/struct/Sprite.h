@@ -6,7 +6,7 @@ namespace MGE {
 
 struct Sprite
 {
-    Vector::float2 Position;
+    Standard::Vector::float2 Position;
     int Width;
     int Height;
     float Scale;

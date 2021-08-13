@@ -437,13 +437,13 @@ void UpdateUniformBuffer()
     vkUnmapMemory(Environment.Device.LogicalDevice, Environment.Device.UniformBuffer.Memory);
 }
 
-void GenerateRect(Vertex* pointer, Vector::float2 position, uint image_index)
+void GenerateRect(Vertex* pointer, Standard::Vector::float2 position, uint image_index)
 {
     
-    Vector::float2 bottom_right = Vector::Add(position, 0.5f, 0.5f);
-    Vector::float2 bottom_left = Vector::Add(position, -0.5f, 0.5f);
-    Vector::float2 top_left = Vector::Add(position, -0.5f, -0.5f);
-    Vector::float2 top_right = Vector::Add(position, 0.5f, -0.5f);
+    Standard::Vector::float2 bottom_right = Standard::Vector::Add(position, 0.5f, 0.5f);
+    Standard::Vector::float2 bottom_left = Standard::Vector::Add(position, -0.5f, 0.5f);
+    Standard::Vector::float2 top_left = Standard::Vector::Add(position, -0.5f, -0.5f);
+    Standard::Vector::float2 top_right = Standard::Vector::Add(position, 0.5f, -0.5f);
     
     *pointer++ = {bottom_right, {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f}, image_index}; // bottom right
     *pointer++ = {bottom_left, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, image_index}; // bottom left

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace MGE {
+namespace MGE { namespace Standard {
 
 namespace Vector
 {
@@ -50,4 +50,4 @@ namespace String
     char* Format(char* msg, ...);
 }
 
-}
+}}

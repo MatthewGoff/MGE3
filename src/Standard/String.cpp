@@ -1,5 +1,5 @@
 
-namespace MGE {
+namespace MGE { namespace Standard {
 
 char* String::ToString(char* buffer, int val)
 {
@@ -68,4 +68,4 @@ int String::Compare(char* s1, char* s2)
     return (int)(*s1 - *s2);
 }
 
-}
+}}

@@ -10,7 +10,7 @@ void Engine::LoadAsset(int id)
     if (asset_location[id] != nullptr) {return;}
 
     char path[128];
-    Util::MoveString(path, "Assets\\x.bmp");
+    Standard::Util::MoveString(path, "Assets\\x.bmp");
     path[7] = id + 48;
     
     Bitmap* bitmap = (Bitmap*)malloc(10 * MEGABYTES);

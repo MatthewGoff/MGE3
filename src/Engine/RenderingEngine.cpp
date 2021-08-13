@@ -51,7 +51,7 @@ int AlphaComposite(int base, int addition)
     return 0xFF000000 | r | g | b;
 }
 
-int SampleBitmap(Vector::float2 point, Bitmap* bitmap)
+int SampleBitmap(Standard::Vector::float2 point, Bitmap* bitmap)
 {
     if (point.x < 0 | point.y < 0 | point.x >= bitmap->Width | point.y >= bitmap->Height)
     {
@@ -64,18 +64,18 @@ int SampleBitmap(Vector::float2 point, Bitmap* bitmap)
 
 int Multisample(int x, int y, Sprite* sprite)
 {
-    Vector::float2 global = Vector::float2 {(float)x, (float)y};
-    Vector::float2 local = Vector::Sub(global, sprite->Position);
+    Standard::Vector::float2 global = Standard::Vector::float2 {(float)x, (float)y};
+    Standard::Vector::float2 local = Standard::Vector::Sub(global, sprite->Position);
     
-    Vector::float2 p1 = Vector::Add(local, 0.25f, 0.25f);
-    Vector::float2 p2 = Vector::Add(local, 0.25f, 0.75f);
-    Vector::float2 p3 = Vector::Add(local, 0.75f, 0.25f);
-    Vector::float2 p4 = Vector::Add(local, 0.75f, 0.75f);
+    Standard::Vector::float2 p1 = Standard::Vector::Add(local, 0.25f, 0.25f);
+    Standard::Vector::float2 p2 = Standard::Vector::Add(local, 0.25f, 0.75f);
+    Standard::Vector::float2 p3 = Standard::Vector::Add(local, 0.75f, 0.25f);
+    Standard::Vector::float2 p4 = Standard::Vector::Add(local, 0.75f, 0.75f);
     
-    p1 = Vector::Div(p1, sprite->Scale);
-    p2 = Vector::Div(p2, sprite->Scale);
-    p3 = Vector::Div(p3, sprite->Scale);
-    p4 = Vector::Div(p4, sprite->Scale);
+    p1 = Standard::Vector::Div(p1, sprite->Scale);
+    p2 = Standard::Vector::Div(p2, sprite->Scale);
+    p3 = Standard::Vector::Div(p3, sprite->Scale);
+    p4 = Standard::Vector::Div(p4, sprite->Scale);
     
     int sample1 = SampleBitmap(p1, sprite->Bitmap);
     int sample2 = SampleBitmap(p2, sprite->Bitmap);
@@ -91,14 +91,14 @@ void Paste(Bitmap* destination, Sprite* sprite)
     int low_y = (int)sprite->Position.y;
     int low_x = (int)sprite->Position.x;
     
-    low_y = Util::Max(low_y, 0);
-    low_x = Util::Max(low_x, 0);
+    low_y = Standard::Util::Max(low_y, 0);
+    low_x = Standard::Util::Max(low_x, 0);
     
     int high_y = (int)sprite->Position.y + sprite->Height * sprite->Scale;
     int high_x = (int)sprite->Position.x + sprite->Width * sprite->Scale;
     
-    high_y = Util::Min(high_y, destination->Height);
-    high_x = Util::Min(high_x, destination->Width);
+    high_y = Standard::Util::Min(high_y, destination->Height);
+    high_x = Standard::Util::Min(high_x, destination->Width);
     
     for (int y = low_y; y < high_y; y++)
     {
@@ -119,29 +119,29 @@ Takes global location x & y. Also takes a sprite with a position.
 int MultisampleGlyph(
     int x,
     int y,
-    Vector::float2 position,
+    Standard::Vector::float2 position,
     float scale,
     char glyph)
 {
-    Vector::float2 global = Vector::float2 {(float)x, (float)y};
-    Vector::float2 local = Vector::Sub(global, position);
+    Standard::Vector::float2 global = Standard::Vector::float2 {(float)x, (float)y};
+    Standard::Vector::float2 local = Standard::Vector::Sub(global, position);
     
-    Vector::float2 p1 = Vector::Add(local, 0.25f, 0.25f);
-    Vector::float2 p2 = Vector::Add(local, 0.25f, 0.75f);
-    Vector::float2 p3 = Vector::Add(local, 0.75f, 0.25f);
-    Vector::float2 p4 = Vector::Add(local, 0.75f, 0.75f);
+    Standard::Vector::float2 p1 = Standard::Vector::Add(local, 0.25f, 0.25f);
+    Standard::Vector::float2 p2 = Standard::Vector::Add(local, 0.25f, 0.75f);
+    Standard::Vector::float2 p3 = Standard::Vector::Add(local, 0.75f, 0.25f);
+    Standard::Vector::float2 p4 = Standard::Vector::Add(local, 0.75f, 0.75f);
     
-    p1 = Vector::Div(p1, scale);
-    p2 = Vector::Div(p2, scale);
-    p3 = Vector::Div(p3, scale);
-    p4 = Vector::Div(p4, scale);
+    p1 = Standard::Vector::Div(p1, scale);
+    p2 = Standard::Vector::Div(p2, scale);
+    p3 = Standard::Vector::Div(p3, scale);
+    p4 = Standard::Vector::Div(p4, scale);
     
     int vertical_offset = 120 * (glyph - 32);
     
-    p1 = Vector::Add(p1, 0, vertical_offset);
-    p2 = Vector::Add(p2, 0, vertical_offset);
-    p3 = Vector::Add(p3, 0, vertical_offset);
-    p4 = Vector::Add(p4, 0, vertical_offset);
+    p1 = Standard::Vector::Add(p1, 0, vertical_offset);
+    p2 = Standard::Vector::Add(p2, 0, vertical_offset);
+    p3 = Standard::Vector::Add(p3, 0, vertical_offset);
+    p4 = Standard::Vector::Add(p4, 0, vertical_offset);
     
     Bitmap* bitmap = GetAsset(0);
     int sample1 = SampleBitmap(p1, bitmap);
@@ -154,7 +154,7 @@ int MultisampleGlyph(
 
 void PasteGlyph(
     Bitmap* destination,
-    Vector::float2 position,
+    Standard::Vector::float2 position,
     float scale,
     int color,
     char glyph)
@@ -162,14 +162,14 @@ void PasteGlyph(
     int low_y = (int)position.y;
     int low_x = (int)position.x;
     
-    low_y = Util::Max(low_y, 0);
-    low_x = Util::Max(low_x, 0);
+    low_y = Standard::Util::Max(low_y, 0);
+    low_x = Standard::Util::Max(low_x, 0);
     
     int high_y = (int)position.y + 120 * scale;
     int high_x = (int)position.x + 44 * scale;
     
-    high_y = Util::Min(high_y, destination->Height);
-    high_x = Util::Min(high_x, destination->Width);
+    high_y = Standard::Util::Min(high_y, destination->Height);
+    high_x = Standard::Util::Min(high_x, destination->Width);
     
     for (int y = low_y; y < high_y; y++)
     {
@@ -192,7 +192,7 @@ void PasteText(Bitmap* destination, TextSprite* text)
     char* runner = (char*)&text->Glyphs;
     while (*runner != 0)
     {
-        Vector::float2 position = Vector::Add(text->Position, 44 * ordinal_position, 0);
+        Standard::Vector::float2 position = Standard::Vector::Add(text->Position, 44 * ordinal_position, 0);
         
         PasteGlyph(destination, position, text->Scale, text->Color, *runner);
         
