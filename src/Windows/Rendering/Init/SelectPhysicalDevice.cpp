@@ -176,9 +176,7 @@ bool DeviceSupportsExtensions(VulkanConfig* config, VkPhysicalDevice physical_de
         for (int j = 0; j < count; j++)
         {
             VkExtensionProperties extension = available_extensions[j];
-            int comp = Standard::String::Compare(
-                desired_extension,
-                extension.extensionName);
+            int comp = Standard::String::Compare(desired_extension, extension.extensionName);
             if (comp == 0)
             {
                 extension_found = true;
@@ -186,9 +184,7 @@ bool DeviceSupportsExtensions(VulkanConfig* config, VkPhysicalDevice physical_de
             }
         }
 
-        if (!extension_found) {
-            return false;
-        }
+        if (!extension_found) {return false;}
     }
 
     return true;
