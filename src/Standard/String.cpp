@@ -1,7 +1,7 @@
 
-namespace MGE { namespace Standard {
+namespace MGE { namespace Standard { namespace String {
 
-char* String::ToString(char* buffer, int val)
+char* ToString(char* buffer, int val)
 {
     // buffer size >= 32
     *(buffer + 31) = 0;
@@ -43,7 +43,7 @@ char* String::ToString(char* buffer, int val)
     return runner;
 }
 
-char* String::ToString(float val)
+char* ToString(float val)
 {
     return nullptr;
 }
@@ -54,7 +54,7 @@ Return:
 =0 iff s1 == s2
 >0 iff s1 > s2
 */
-int String::Compare(char* s1, char* s2)
+int Compare(char* s1, char* s2)
 {
     while (*s1 == *s2)
     {
@@ -68,4 +68,4 @@ int String::Compare(char* s1, char* s2)
     return (int)(*s1 - *s2);
 }
 
-}}
+}}}

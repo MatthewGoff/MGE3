@@ -1,9 +1,9 @@
-namespace MGE { namespace Standard {
+namespace MGE { namespace Standard { namespace Util {
 
 /*
 Reverse the order of bytes in a 4 byte word
 */
-int Util::ReverseEnd(int word)
+int ReverseEnd(int word)
 {
     int result = 0;
     result |= (word & 0xF000) >> (3 * 8);
@@ -13,7 +13,7 @@ int Util::ReverseEnd(int word)
     return result;
 }
 
-int Util::Min(int a, int b)
+int Min(int a, int b)
 {
     if (a < b)
     {
@@ -25,7 +25,7 @@ int Util::Min(int a, int b)
     }
 }
 
-int Util::Max(int a, int b)
+int Max(int a, int b)
 {
     if (a > b)
     {
@@ -37,7 +37,7 @@ int Util::Max(int a, int b)
     }
 }
 
-void Util::MoveString(char* to, char* from)
+void MoveString(char* to, char* from)
 {
     while (*from != 0)
     {
@@ -52,7 +52,7 @@ void Util::MoveString(char* to, char* from)
 /*
 Determine the next number after <base> which is evenly divisible by <resolution>
 */
-int Util::Align(int base, int resolution)
+int Align(int base, int resolution)
 {    
     int excess = base % resolution;
     if (excess != 0)
@@ -62,4 +62,4 @@ int Util::Align(int base, int resolution)
     return base;
 }
 
-}}
+}}}
