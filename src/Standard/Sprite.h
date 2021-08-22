@@ -1,6 +1,6 @@
 #pragma once
 
-namespace MGE { namespace Standard {
+namespace MGE {
 
 struct Sprite
 {
@@ -50,4 +50,4 @@ struct Sprite
     }
 };
 
-}}
+}

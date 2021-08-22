@@ -66,7 +66,7 @@ bool ValidationLayersSupported(VulkanConfig* config)
         for (int j = 0; j < count; j++)
         {
             VkLayerProperties layer = available_layers[j];
-            if (Standard::String::Compare(desired_layer, layer.layerName) == 0)
+            if (String::Compare(desired_layer, layer.layerName) == 0)
             {
                 layer_found = true;
                 break;

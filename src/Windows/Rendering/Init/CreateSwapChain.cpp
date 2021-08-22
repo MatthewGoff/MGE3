@@ -49,11 +49,11 @@ VkExtent2D ChooseSwapExtent(VkSurfaceCapabilitiesKHR* capabilities)
     {
         VkExtent2D extent = {WINDOW_WIDTH, WINDOW_HEIGHT};
         
-        extent.width = Standard::Util::Min(extent.width, capabilities->maxImageExtent.width);
-        extent.width = Standard::Util::Max(extent.width, capabilities->minImageExtent.width);
+        extent.width = Util::Min(extent.width, capabilities->maxImageExtent.width);
+        extent.width = Util::Max(extent.width, capabilities->minImageExtent.width);
         
-        extent.height = Standard::Util::Min(extent.height, capabilities->maxImageExtent.height);
-        extent.height = Standard::Util::Max(extent.height, capabilities->minImageExtent.height);
+        extent.height = Util::Min(extent.height, capabilities->maxImageExtent.height);
+        extent.height = Util::Max(extent.height, capabilities->minImageExtent.height);
         
         return extent;
     }
@@ -68,7 +68,7 @@ bool CreateSwapchain(VulkanEnvironment* env)
     // 0 is a reserved value indicating there is no maximum
     if (env->SwapchainConfig.Capabilities.maxImageCount != 0)
     {
-        image_count = Standard::Util::Min(image_count, env->SwapchainConfig.Capabilities.maxImageCount);
+        image_count = Util::Min(image_count, env->SwapchainConfig.Capabilities.maxImageCount);
     }
     
     if (image_count > SwapchainConfig::MAX_SIZE)

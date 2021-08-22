@@ -1,6 +1,6 @@
 #pragma once
 
-namespace MGE { namespace Standard { namespace Vector {
+namespace MGE { namespace Vector {
 
 struct float2
 {
@@ -29,4 +29,4 @@ float2 Mul(float2 v1, float2 v2);
 float2 Div(float2 vector, float scalar);
 float2 Rotate(float2 vector, float rad);
 
-}}}
+}}

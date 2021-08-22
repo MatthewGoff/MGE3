@@ -4,7 +4,7 @@ namespace MGE {
 
 struct Glyph
 {
-    Standard::Vector::float2 Position;
+    Vector::float2 Position;
     float Scale;
     char ascii;
 };

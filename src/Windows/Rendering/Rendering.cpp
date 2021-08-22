@@ -437,13 +437,13 @@ void UpdateUniformBuffer()
     vkUnmapMemory(Environment.Device.LogicalDevice, Environment.Device.UniformBuffer.Memory);
 }
 
-void GenerateRect(Vertex* pointer, Standard::Sprite* sprite, uint image_index)
+void GenerateRect(Vertex* pointer, Sprite* sprite, uint image_index)
 {
     
-    Standard::Vector::float2 bottom_right = sprite->BottomRight();
-    Standard::Vector::float2 bottom_left = sprite->BottomLeft();
-    Standard::Vector::float2 top_left = sprite->TopLeft();
-    Standard::Vector::float2 top_right = sprite->TopRight();
+    Vector::float2 bottom_right = sprite->BottomRight();
+    Vector::float2 bottom_left = sprite->BottomLeft();
+    Vector::float2 top_left = sprite->TopLeft();
+    Vector::float2 top_right = sprite->TopRight();
     
     *pointer++ = {bottom_right, {0.0f, 1.0f, 1.0f}, {1.0f, 1.0f}, image_index}; // bottom right
     *pointer++ = {bottom_left, {0.0f, 0.0f, 1.0f}, {0.0f, 1.0f}, image_index}; // bottom left
@@ -461,9 +461,9 @@ bool UpdateVertexBuffer()
     
     Vertex vertices[vertices_count];
     
-    Standard::Sprite sprite1 = {};
-    Standard::Sprite sprite2 = {};
-    Standard::Sprite sprite3 = {};
+    Sprite sprite1 = {};
+    Sprite sprite2 = {};
+    Sprite sprite3 = {};
     
     
     sprite1.Pivot = {0.5f, 0.5f};

@@ -1,5 +1,5 @@
 
-namespace MGE { namespace Standard { namespace Vector {
+namespace MGE { namespace Vector {
 
 float2 Add(float2 oprnd1, float2 oprnd2)
 {
@@ -42,4 +42,4 @@ float2 Rotate(float2 vector, float rad)
     return result;
 }
 
-}}}
+}}

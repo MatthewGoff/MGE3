@@ -1,5 +1,5 @@
 
-namespace MGE { namespace Standard { namespace String {
+namespace MGE { namespace String {
 
 char* ToString(char* buffer, int val)
 {
@@ -68,4 +68,4 @@ int Compare(char* s1, char* s2)
     return (int)(*s1 - *s2);
 }
 
-}}}
+}}

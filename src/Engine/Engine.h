@@ -15,8 +15,8 @@ void GameMain(ScreenBuffer* ScreenBuffer, ControlInput* ControlInput, DebugInfo*
 bool OpenBitmap(byte* mem, int mem_size, Bitmap* destination, int dest_size, char* path);
 
 // Rendering.cpp
-void Paste(Bitmap* destination, Sprite* sprite);
-void PasteText(Bitmap* destination, TextSprite* text);
+//void Paste(Bitmap* destination, Sprite* sprite);
+//void PasteText(Bitmap* destination, TextSprite* text);
 
 // AssetManager.cpp
 void LoadAsset(int id);

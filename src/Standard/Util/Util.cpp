@@ -1,4 +1,4 @@
-namespace MGE { namespace Standard { namespace Util {
+namespace MGE { namespace Util {
 
 /*
 Reverse the order of bytes in a 4 byte word
@@ -62,4 +62,4 @@ int Align(int base, int resolution)
     return base;
 }
 
-}}}
+}}

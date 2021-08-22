@@ -6,7 +6,7 @@
 
 /* This file (and print and clock) contain all and only the code to abstract
  * the Windows operating system. To the best of my knowledge it is conventional
- * and as-you-would-expect. It is my own re-creation of the first 25
+ * and as-you-would-expect. It is my own re-creation of the first ~25
  * installments of the "Handemade Hero" tutorials.
 */
 namespace MGE { namespace Windows {
@@ -31,9 +31,9 @@ void PostFatalMessage(char* message)
         MB_OK|MB_ICONINFORMATION);
 }
 
-Standard::Vector::int2 GetWindowDimensions(HWND window_handle)
+Vector::int2 GetWindowDimensions(HWND window_handle)
 {
-    Standard::Vector::int2 result;
+    Vector::int2 result;
     
     HDC device_context = GetDC(window_handle);
     RECT client_rect;
@@ -61,7 +61,7 @@ void PopulateBitmapInfo(int width, int height)
 void RefreshScreen(HWND window_handle, ScreenBuffer* ScreenBuffer)
 {
     HDC device_context = GetDC(window_handle);
-    Standard::Vector::int2 window_dimensions = GetWindowDimensions(window_handle);
+    Vector::int2 window_dimensions = GetWindowDimensions(window_handle);
     StretchDIBits(
         device_context,
         0, 0, ScreenBuffer->Width, ScreenBuffer->Height,
@@ -89,7 +89,7 @@ LRESULT CALLBACK WindowsCallback(
         case WM_SIZE:
         {
             //sent when windows is resized.
-            Standard::Vector::int2 window_dimensions = GetWindowDimensions(hwnd);
+            Vector::int2 window_dimensions = GetWindowDimensions(hwnd);
             int width = window_dimensions.x;
             int height = window_dimensions.y;
             //PopulateBitmapInfo(width, height);
@@ -326,7 +326,7 @@ void ProcessMouse(HWND window_handle, ControlInput* ControlInput)
     GetCursorPos(&position);
     
     ScreenToClient(window_handle, &position);
-    ControlInput->CursorPosition = Standard::Vector::int2 {position.x, position.y};
+    ControlInput->CursorPosition = Vector::int2 {position.x, position.y};
     //Print("position = (%d, ", position.x);
     //Print("%d)\n", position.y);
 }
@@ -441,7 +441,7 @@ int WinMain(HINSTANCE hInstance)
         return 0;
     }
     
-    Standard::Vector::int2 window_dimensions = GetWindowDimensions(window_handle);
+    Vector::int2 window_dimensions = GetWindowDimensions(window_handle);
     int width = window_dimensions.x;
     int height = window_dimensions.y;
     RootMemory->ScreenBuffer.Width = width;

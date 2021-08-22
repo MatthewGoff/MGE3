@@ -6,15 +6,15 @@ namespace MGE { namespace Windows { namespace Rendering {
     
 struct UniformBufferObject
 {
-    Standard::Vector::float2 CameraPosition;
-    Standard::Vector::float2 CameraDimensions;
+    Vector::float2 CameraPosition;
+    Vector::float2 CameraDimensions;
 };
 
 struct Vertex
 {
-    Standard::Vector::float2 Position;
-    Standard::Vector::float3 Color;
-    Standard::Vector::float2 TexCoord;
+    Vector::float2 Position;
+    Vector::float3 Color;
+    Vector::float2 TexCoord;
     uint32 TexIndex;
     
     static VkVertexInputBindingDescription BindingDescription()
