@@ -265,9 +265,7 @@ void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 bool FunImage(VulkanEnvironment* env)
 {
     bool success;
-    
-    Engine::LoadAsset(1);
-    Engine::LoadAsset(2);
+
     Bitmap* bitmap[2];
     bitmap[0] = Engine::GetAsset(1);
     bitmap[1] = Engine::GetAsset(2);

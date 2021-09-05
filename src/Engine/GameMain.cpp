@@ -11,8 +11,20 @@ void Engine::InitializeGame(RootMemory* RootMemory)
 {
     animation_offset = 0;
 
-    LoadAsset(0);
-    LoadAsset(1);
+    byte* mem = (byte*)malloc(10 * MEGABYTES);
+    Memory vol = {mem, 10 * MEGABYTES};
+    
+    byte* image_one = (byte*)malloc(10 * MEGABYTES);
+    byte* image_two = (byte*)malloc(10 * MEGABYTES);
+    byte* image_three = (byte*)malloc(10 * MEGABYTES);
+    Memory one = {image_one, 10 * MEGABYTES};
+    Memory two = {image_two, 10 * MEGABYTES};
+    Memory three = {image_three, 10 * MEGABYTES};
+    LoadAsset(vol, 0, one);
+    LoadAsset(vol, 1, two);
+    LoadAsset(vol, 2, three);
+    
+    free(mem);
     
     /*
     smile_sprite = Sprite {};

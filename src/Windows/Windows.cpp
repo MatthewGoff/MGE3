@@ -351,27 +351,46 @@ void Fluff(RootMemory* RootMemory)
     bool success = WriteEntireFile(pointer, sizeof(msg)/sizeof(msg[0]), "AppData\\new_output.txt");
 }
 
-RootMemory* InitializeMemory()
+Memory InitializeMemory()
 {
     // Actual physical pages are not allocated unless/until the virtual addresses are actually accessed. fyi
     
-    // It is not clear to me why mem_reserve is neccesary on top of mem_commit but it appears to be conventional.
-    RootMemory* memory = (RootMemory*)VirtualAlloc(0, RootMemorySize, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
+    const uint64 MAXIMUM_ALLOCATION = 1 * GIGABYTES;
     
-    if (memory == nullptr)
+    byte* base_address = nullptr;
+    
+    uint64 remainder = RootMemorySize;
+    while (remainder > 0)
     {
-        return nullptr;
+        uint64 allocation = remainder;
+        if (allocation > MAXIMUM_ALLOCATION)
+        {
+            allocation = MAXIMUM_ALLOCATION;
+        }
+        
+        // It is not clear to me why mem_reserve is neccesary on top of mem_commit but it appears to be conventional.
+        byte* address = (byte*)VirtualAlloc(
+            0,
+            allocation,
+            MEM_RESERVE | MEM_COMMIT,
+            PAGE_READWRITE);
+        
+        if (base_address == nullptr)
+        {
+            base_address = address;
+        }
+        remainder -= allocation;
     }
     
     /* These test cases should be made to catch memory access errors.
      * Which ins't really possible without try/catch. I could try
      * compiling this separately to avoid the general overhead.
     */
-    byte* beginning = (byte*)memory;
+    byte* beginning = (byte*)base_address;
     byte* end = beginning + RootMemorySize;
     if (*beginning != 0x00 || *end != 0x00)
     {
-        return nullptr;
+        // Panic
     }
     
     *beginning = 0xFF;
@@ -379,13 +398,13 @@ RootMemory* InitializeMemory()
 
     if (*beginning != 0xFF || *end != 0xFF)
     {
-        return nullptr;
+        // Panic
     }
     
     *beginning = 0x00;
     *end = 0x00;
     
-    return memory;
+    return {base_address, RootMemorySize};
 }
 
 HWND InitializeWindow(HINSTANCE hInstance)
@@ -428,12 +447,8 @@ HWND InitializeWindow(HINSTANCE hInstance)
 int WinMain(HINSTANCE hInstance)
 {
     // Memory needs to be initialized before window. Discovered experimentally that the window will try to display as soon as it's created, before we create the buffer. Might be possible to re-order if initializing the window as non-visible.
-    RootMemory* RootMemory = InitializeMemory();
-    if (RootMemory == nullptr)
-    {
-        PostFatalMessage("Could not allocate memory");
-        return 0;
-    }
+    Memory mem = InitializeMemory();
+    
     HWND window_handle = InitializeWindow(hInstance);
     if (window_handle == nullptr)
     {
@@ -441,11 +456,14 @@ int WinMain(HINSTANCE hInstance)
         return 0;
     }
     
+    //Memory mem;
+    RootMemory* MyMemory = (RootMemory*) mem.Addr;
+
     Vector::int2 window_dimensions = GetWindowDimensions(window_handle);
     int width = window_dimensions.x;
     int height = window_dimensions.y;
-    RootMemory->ScreenBuffer.Width = width;
-    RootMemory->ScreenBuffer.Height = height;
+    MyMemory->ScreenBuffer.Width = width;
+    MyMemory->ScreenBuffer.Height = height;
     PopulateBitmapInfo(width, height);
     
     /* timeBeginPeriod() has a misleading name. It will set the Windows
@@ -466,13 +484,13 @@ int WinMain(HINSTANCE hInstance)
     float target_framerate = 30.0; // hertz
     float target_frametime = 1000000.0 / target_framerate; // microseconds
     
-    Engine::InitializeGame(RootMemory);
+    Engine::InitializeGame(MyMemory);
     
     Rendering::InitVulkan(hInstance, window_handle);
     
     // End initialization
 
-    Fluff(RootMemory);
+    Fluff(MyMemory);
 
     // Start loop
     int loop_time_stamp = Clock::GetTimeMicro();
@@ -483,14 +501,14 @@ int WinMain(HINSTANCE hInstance)
     while (running)
     {
         ProcessMessages();
-        ProcessMouse(window_handle, &RootMemory->ControlInput);
+        ProcessMouse(window_handle, &MyMemory->ControlInput);
         
-        RootMemory->DebugInfo.FrameRate = (int) (1000000.0 / frame_time);
-        RootMemory->DebugInfo.WorkLoad = work_load;
-        RootMemory->DebugInfo.Time = loop_time_stamp / 1000000.0;
-        RootMemory->DebugInfo.CursorPosition = RootMemory->ControlInput.CursorPosition;
+        MyMemory->DebugInfo.FrameRate = (int) (1000000.0 / frame_time);
+        MyMemory->DebugInfo.WorkLoad = work_load;
+        MyMemory->DebugInfo.Time = loop_time_stamp / 1000000.0;
+        MyMemory->DebugInfo.CursorPosition = MyMemory->ControlInput.CursorPosition;
         
-        Engine::GameMain(&RootMemory->ScreenBuffer, &RootMemory->ControlInput, &RootMemory->DebugInfo);
+        Engine::GameMain(&MyMemory->ScreenBuffer, &MyMemory->ControlInput, &MyMemory->DebugInfo);
 
         int sleep_duration;
         

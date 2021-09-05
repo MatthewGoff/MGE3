@@ -4,7 +4,7 @@ namespace MGE {
 
 static Bitmap* asset_location[10]; // Maximum 10 assets
 
-void Engine::LoadAsset(int id)
+void Engine::LoadAsset(Memory vol, int id, Memory destination)
 {
     //Check that we haven't already loaded
     if (asset_location[id] != nullptr) {return;}
@@ -13,18 +13,10 @@ void Engine::LoadAsset(int id)
     Util::MoveString(path, "Assets\\x.bmp");
     path[7] = id + 48;
     
-    Bitmap* bitmap = (Bitmap*)malloc(10 * MEGABYTES);
+    bool success = Engine::OpenBitmap(vol.Addr, vol.Size, (Bitmap*)destination.Addr, destination.Size, path);
+    if (!success) {return;}
     
-    byte* mem = (byte*)malloc(10 * MEGABYTES);
-    bool success = Engine::OpenBitmap(mem, 10 * MEGABYTES, bitmap, 10 * MEGABYTES, path);
-    free(mem);
-    
-    if (!success)
-    {
-        return;
-    }
-    
-    asset_location[id] = bitmap;
+    asset_location[id] = (Bitmap*)destination.Addr;
 }
 
 Bitmap* Engine::GetAsset(int id)

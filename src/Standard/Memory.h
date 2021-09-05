@@ -4,7 +4,7 @@ namespace MGE {
 
 struct Memory
 {
-    uint64 Addr;
+    byte* Addr;
     uint64 Size;
 };
 
