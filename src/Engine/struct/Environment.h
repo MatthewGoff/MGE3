@@ -4,7 +4,8 @@ namespace MGE {
 
 struct Environment
 {
-    byte AssetStore[10][10 * MEGABYTES];
+    Bitmap* AssetAddress[10]; // Maximum 10 assets
+    byte AssetMemory[10][10 * MEGABYTES];
 };
 
 }

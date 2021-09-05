@@ -1,18 +1,26 @@
 #include "Engine.h"
+#include "struct/Environment.h"
 
-namespace MGE {
+namespace MGE { namespace Engine {
 
+Environment* MyEnv;
 int animation_offset;
 Sprite smile_sprite;
 Sprite ascii_sprite;
 TextSprite my_text;
 
-void Engine::InitializeGame(RootMemory* RootMemory)
+void InitializeGame(Memory allocation, Memory vol, Bitmap** bitmap_one, Bitmap** bitmap_two)
 {
-    animation_offset = 0;
+    uint64 required_memory = sizeof(Environment);
+    if (allocation.Size < required_memory)
+    {
+        Error("[Error] Not enogh memory given to InitializeGame.\n");
+        return;
+    }
+    
+    MyEnv = (Environment*)allocation.Addr;
 
-    byte* mem = (byte*)malloc(10 * MEGABYTES);
-    Memory vol = {mem, 10 * MEGABYTES};
+    animation_offset = 0;
     
     byte* image_one = (byte*)malloc(10 * MEGABYTES);
     byte* image_two = (byte*)malloc(10 * MEGABYTES);
@@ -20,11 +28,9 @@ void Engine::InitializeGame(RootMemory* RootMemory)
     Memory one = {image_one, 10 * MEGABYTES};
     Memory two = {image_two, 10 * MEGABYTES};
     Memory three = {image_three, 10 * MEGABYTES};
-    LoadAsset(vol, 0, one);
-    LoadAsset(vol, 1, two);
-    LoadAsset(vol, 2, three);
-    
-    free(mem);
+    LoadAsset(vol, MyEnv, 0, one);
+    LoadAsset(vol, MyEnv, 1, two);
+    LoadAsset(vol, MyEnv, 2, three);
     
     /*
     smile_sprite = Sprite {};
@@ -49,6 +55,9 @@ void Engine::InitializeGame(RootMemory* RootMemory)
     char buffer[32];
     char* pointer = String::ToString(buffer, -500200100);
     Util::MoveString(my_text.Glyphs, pointer);
+    
+    *bitmap_one = GetAsset(MyEnv, 1);
+    *bitmap_two = GetAsset(MyEnv, 2);
 }
 
 void ClearBuffer(ScreenBuffer* ScreenBuffer)
@@ -67,7 +76,7 @@ void ClearBuffer(ScreenBuffer* ScreenBuffer)
     }
 }
 
-void Engine::GameMain(ScreenBuffer* ScreenBuffer, ControlInput* ControlInput, DebugInfo* DebugInfo)
+void GameMain(ScreenBuffer* ScreenBuffer, ControlInput* ControlInput, DebugInfo* DebugInfo)
 {
     animation_offset++;
     
@@ -81,4 +90,4 @@ void Engine::GameMain(ScreenBuffer* ScreenBuffer, ControlInput* ControlInput, De
     //Engine::PasteText((Bitmap*)ScreenBuffer, &my_text);
 }
 
-}
+}}

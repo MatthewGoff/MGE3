@@ -447,7 +447,7 @@ HWND InitializeWindow(HINSTANCE hInstance)
 int WinMain(HINSTANCE hInstance)
 {
     // Memory needs to be initialized before window. Discovered experimentally that the window will try to display as soon as it's created, before we create the buffer. Might be possible to re-order if initializing the window as non-visible.
-    Memory mem = InitializeMemory();
+    Memory vol = InitializeMemory();
     
     HWND window_handle = InitializeWindow(hInstance);
     if (window_handle == nullptr)
@@ -456,8 +456,10 @@ int WinMain(HINSTANCE hInstance)
         return 0;
     }
     
-    //Memory mem;
-    RootMemory* MyMemory = (RootMemory*) mem.Addr;
+    //Memory vol;
+    RootMemory* MyMemory = (RootMemory*) vol.Addr;
+    vol.Addr += sizeof(RootMemory);
+    vol.Size -= sizeof(RootMemory);
 
     Vector::int2 window_dimensions = GetWindowDimensions(window_handle);
     int width = window_dimensions.x;
@@ -484,9 +486,16 @@ int WinMain(HINSTANCE hInstance)
     float target_framerate = 30.0; // hertz
     float target_frametime = 1000000.0 / target_framerate; // microseconds
     
-    Engine::InitializeGame(MyMemory);
+    Memory engine_memory = {vol.Addr, 200 * MEGABYTES};
+    vol.Addr += engine_memory.Size;
+    vol.Size -= engine_memory.Size;
+
+
+    Bitmap* bitmap_one;
+    Bitmap* bitmap_two;
+    Engine::InitializeGame(engine_memory, vol, &bitmap_one, &bitmap_two);
     
-    Rendering::InitVulkan(hInstance, window_handle);
+    Rendering::InitVulkan(hInstance, window_handle, bitmap_one, bitmap_two);
     
     // End initialization
 

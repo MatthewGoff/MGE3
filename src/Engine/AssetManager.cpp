@@ -1,13 +1,12 @@
 #include "Engine.h"
+#include "struct/Environment.h"
 
 namespace MGE {
 
-static Bitmap* asset_location[10]; // Maximum 10 assets
-
-void Engine::LoadAsset(Memory vol, int id, Memory destination)
+void Engine::LoadAsset(Memory vol, Environment* env, int id, Memory destination)
 {
     //Check that we haven't already loaded
-    if (asset_location[id] != nullptr) {return;}
+    if (env->AssetAddress[id] != nullptr) {return;}
 
     char path[128];
     Util::MoveString(path, "Assets\\x.bmp");
@@ -16,12 +15,12 @@ void Engine::LoadAsset(Memory vol, int id, Memory destination)
     bool success = Engine::OpenBitmap(vol.Addr, vol.Size, (Bitmap*)destination.Addr, destination.Size, path);
     if (!success) {return;}
     
-    asset_location[id] = (Bitmap*)destination.Addr;
+    env->AssetAddress[id] = (Bitmap*)destination.Addr;
 }
 
-Bitmap* Engine::GetAsset(int id)
+Bitmap* Engine::GetAsset(Environment* env, int id)
 {
-    return asset_location[id];
+    return env->AssetAddress[id];
 }
 
 }

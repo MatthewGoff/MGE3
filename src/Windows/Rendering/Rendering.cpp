@@ -262,21 +262,25 @@ void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
     EndSingleTimeCommands(commandBuffer);
 }
 
-bool FunImage(VulkanEnvironment* env)
+bool CreateImage(Bitmap* bitmap, int dest)
+{
+    bool success = Environment.MyTextures[dest].Init(&Environment.Device, bitmap);
+    return success;
+}
+
+bool FunImage(VulkanEnvironment* env, Bitmap* bitmap_one, Bitmap* bitmap_two)
 {
     bool success;
 
-    Bitmap* bitmap[2];
-    bitmap[0] = Engine::GetAsset(1);
-    bitmap[1] = Engine::GetAsset(2);
+    Bitmap* bitmap[] = {bitmap_one, bitmap_two};
     
-    for (int i = 0; i < env->TEXTURE_COUNT; i++)
+    success = env->MyTextures[0].Init(&env->Device, bitmap_one);
+    if (!success) {return false;}
+    success = env->MyTextures[1].Init(&env->Device, bitmap_two);
+    if (!success) {return false;}
+    
+    for (int i = 2; i < env->TEXTURE_COUNT; i++)
     {
-        int bitmap_index = 0;
-        if (i == 9)
-        {
-            bitmap_index = 1;
-        }
         success = env->MyTextures[i].Init(&env->Device, bitmap[i % 2]);
         if (!success) {return false;}
     }
@@ -284,7 +288,7 @@ bool FunImage(VulkanEnvironment* env)
     return true;
 }
 
-bool InitVulkan(HINSTANCE instance_handle, HWND window_handle)
+bool InitVulkan(HINSTANCE instance_handle, HWND window_handle, Bitmap* bitmap_one, Bitmap* bitmap_two)
 {
     VkDebugUtilsMessengerCreateInfoEXT debug_info; //Can forget after init
     GetDebugInfo(&debug_info);
@@ -370,7 +374,7 @@ bool InitVulkan(HINSTANCE instance_handle, HWND window_handle)
         return false;
     }
 
-    success = FunImage(&Environment);
+    success = FunImage(&Environment, bitmap_one, bitmap_two);
     if (!success)
     {
         Error("[Error] Failed to create Image.\n");
